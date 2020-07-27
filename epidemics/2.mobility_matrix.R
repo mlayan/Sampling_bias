@@ -99,5 +99,5 @@ plot(inhab_poly, col = COLS)
 dev.off()
 
 # Write the mobility matrix of ecoregions
-write.table(out, paste0("mobility_matrix_", demes, ".txt"), sep = "\t", 
+write.table(out, paste0("inputfiles/mobility_matrix_", demes, ".txt"), sep = "\t", 
             row.names = FALSE, col.names = FALSE)
