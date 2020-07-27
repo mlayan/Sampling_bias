@@ -11,19 +11,18 @@ library(tidyverse)
 library(ggplot2)
 library(wesanderson)
 
-setwd("/mnt/gaia/MMMI_Rage/")
-source('R_Functions/plot_results.R')
+source('R/plot_results.R')
 
 #############################################################
 ## Load data 
 ## Selected runs 
-selected = read.table("2.Figures/2.selected_runs.txt", stringsAsFactors = FALSE, 
+selected = read.table("inputfiles/selected_runs.txt", stringsAsFactors = FALSE, 
                       header = TRUE, sep = "\t")
 
 ## Tree topology regression data
-topologies1 = read.table('HKY_M1/analyses/topology_regression_sim1to10.txt', 
+topologies1 = read.table('inputfiles/topology_regression_sim1to10.txt', 
                          stringsAsFactors = FALSE, header = TRUE, sep = "\t")
-topologies2 = read.table('HKY_M2/analyses/topology_regression_sim1to10.txt', 
+topologies2 = read.table('inputfiles/topology_regression_sim1to10.txt', 
                          stringsAsFactors = FALSE, header = TRUE, sep = "\t")
 topologies = bind_rows(topologies1, topologies2) %>%
   mutate(model = recode(model, `mascot_v7` = "mascot")) %>%
