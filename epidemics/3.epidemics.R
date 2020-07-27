@@ -26,14 +26,14 @@ library(foreach)
 
 # Models and functions
 # Epidemic model
-sourceCpp("rfunctions/cpp_model_v5.cpp")
-sourceCpp("rfunctions/cpp_beta_mat.cpp")
+sourceCpp("R/cpp_model_v5.cpp")
+sourceCpp("R/cpp_beta_mat.cpp")
 
 # Evolutionary model
-source('rfunctions/HKY_v2.R')
+source('R/HKY_v2.R')
 
 # Sampling protocols
-source('rfunctions/sampling_protocols.R')
+source('R/sampling_protocols.R')
 
 # Arguments
   # Spatial resolution
