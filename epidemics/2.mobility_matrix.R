@@ -14,8 +14,6 @@ library(rgeos)
 library(dplyr)
 library(raster)
 library(sf)
-library(igraph)
-setwd("/mnt/gaia/MMMI_Rage/Input_files/")
 
 # Number of demes
 demes <- 
@@ -28,7 +26,7 @@ if (demes == "ecoregions") COLS = c("palegreen", "green", "darkgreen", "yellow",
 
 # Aggregate the predicted mobility matrix---------------
 # Load data
-load("1.ecoregion_raster.RData")
+load("inutfiles/1.predict_mobility.RData")
 inhab_poly = as_Spatial(st_read(paste0("gadm36_MAR_", demes, ".shp")), IDs = "AGG_ID")
 if (demes == "3demes") inhab_poly = inhab_poly[order(inhab_poly$REGIONS), ]
 if (demes == "ecoregions") inhab_poly = inhab_poly[order(inhab_poly$AGG_ID), ]
