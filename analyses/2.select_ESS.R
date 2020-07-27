@@ -53,7 +53,7 @@ high_ESS = high_ESS[!duplicated(high_ESS), ]
 high_ESS = anti_join(high_ESS, low_ESS)
 
 mutate(high_ESS, model = recode(model, runTypes='mascot')) %>%
-  write.table(., paste0("2.Figures/", runType, "/2.selected_runs_", runType, ".txt"), sep = "\t", 
+  write.table(., paste0("inputfiles/selected_runs_", runType, ".txt"), sep = "\t", 
               row.names = FALSE, col.names = TRUE)
 
 # Modify mascot_v* into mascot and  
@@ -62,6 +62,6 @@ right_join(data, high_ESS) %>%
   mutate(model = recode(model, runTypes='mascot')) %>%
   filter(ESS >= threshold || is.na(ESS)) %>%
   data.frame() %>%
-  write.table(., paste0("2.Figures/", runType, "/2.selected_data_", runType, ".txt"), sep = "\t", 
+  write.table(., paste0("inputfiles/selected_data_", runType, ".txt"), sep = "\t", 
               row.names = FALSE, col.names = TRUE)
   
