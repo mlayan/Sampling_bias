@@ -19,8 +19,8 @@ runType = 'mascot_v8'
 ## Load data
 #############################################################
 ## Simulation data
-m1 = read.table('HKY_M1/analyses/migration_events_sim1to10.txt', stringsAsFactors = FALSE, header = TRUE, sep = "\t")
-m2 = read.table('HKY_M2/analyses/migration_events_sim1to10.txt', stringsAsFactors = FALSE, header = TRUE, sep = "\t")
+m1 = read.table('inputfiles/migration_events_sim1to10.txt', stringsAsFactors = FALSE, header = TRUE, sep = "\t")
+m2 = read.table('inputfiles/migration_events_sim1to10.txt', stringsAsFactors = FALSE, header = TRUE, sep = "\t")
 m = bind_rows(m1, m2) %>%
   mutate(protocol = gsub("_[510]+$", "", protocol)) %>%
   filter(protocol != 'stratified') %>%
@@ -28,13 +28,13 @@ m = bind_rows(m1, m2) %>%
   mutate(parameter = recode(parameter,
                             epidemicDuration = "treeHeight"))
 ## BEAST data
-data = read.table(paste0("2.Figures/", runType, "/2.selected_data_", runType, ".txt"),
+data = read.table(paste0("inputfiles/selected_data_", runType, ".txt"),
                   stringsAsFactors = FALSE, header = TRUE, sep = "\t") %>%
   mutate(protocol = factor(protocol, c(bias, surveillance)),
          model = gsub("_.*$", "", model))
 
 ## Selected runs
-selected = read.table(paste0("2.Figures/", runType, "/2.selected_runs_", runType, ".txt"),
+selected = read.table(paste0("inputfiles/selected_runs_", runType, ".txt"),
                       stringsAsFactors = FALSE,
                       header = TRUE, sep = "\t")
 
@@ -88,10 +88,10 @@ ggplot(migrationRates[migrationRates$matrix == i & migrationRates$protocol %in% 
   labs(x = "Simulated migration events (mean)", y = "Estimated migration events (mean)", col = "Rate direction")
 
 if (protocols == "bias") {
-  ggsave(paste0("2.Figures/", runType, "/migration_rates_forwards_", protocols, ".png"), # ,"_m", i, ".png"), 
+  ggsave(paste0("figures/migration_rates_forwards_", protocols, ".png"), # ,"_m", i, ".png"), 
          width = 13, height = 5)
 } else {
-  ggsave(paste0("2.Figures/", runType, "/migration_rates_forwards_", protocols, ".png"), # ,"_m", i, ".png"),
+  ggsave(paste0("figures/migration_rates_forwards_", protocols, ".png"), # ,"_m", i, ".png"),
          width = 7, height = 5)
 }
 
