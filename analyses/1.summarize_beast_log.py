@@ -19,26 +19,16 @@ import sys
 import re
 import math
 import time
-import multiprocessing as mp
 import pandas as pd
-import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 
-# Absolute paths
-#stAbs = "/mnt/gaia/"  # Local computer
-stAbs = "/pasteur/projets/common/"  # Work on the cluster
-
 ## Import custom functions
-sys.path.append(stAbs + 'MMMI_Rage/Python_modules')
+sys.path.append('python')
 from geneticAndSpatialEstimates import *
 
 # runType
 runType = "mascot_v8"
 
-
-##########################################
-## Beast 2 - Mascot - M1
-##########################################
 ## Directory
 directory = stAbs + "MMMI_Rage/HKY_M1/"
 os.chdir(directory)
@@ -77,14 +67,15 @@ with ProcessPoolExecutor() as executor:
         
 end = time.time()
 
-print("\nM1 computational time:")
+print("\nComputational time:")
 print(end-start)
+print("\n")
 
 # Concatenate dataframes
 data = pd.concat(out, axis = 0)
 
 # Write the dataframe
-data.to_csv('analyses/log_files_' + runType + '_ESS.txt', 
+data.to_csv('inputfiles/log_files_' + runType + '_ESS.txt', 
             index = False, 
             header = True, 
             sep = '\t', 
