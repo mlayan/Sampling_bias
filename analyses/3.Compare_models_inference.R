@@ -11,8 +11,7 @@ library(tidyverse)
 library(ggplot2)
 library(wesanderson)
 
-setwd("/mnt/gaia/MMMI_Rage/")
-source('R_Functions/plot_results.R')
+source('R/plot_results.R')
 
 runType = 'mascot_v8'
 
