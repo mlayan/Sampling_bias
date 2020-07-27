@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
-#!/bin/usr/python
-#-*-code:utf-8-*-
-
 """
 COMPUTE THE REGRESSION COEFFICIENT COEFFICIENT 
 OF THE PAIRWISE tMRCA
@@ -23,15 +19,12 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 
 # Import personnal modules 
-absPath = '/pasteur/projets/common/MMMI_Rage/'
-#absPath = '/mnt/gaia/MMMI_Rage/'
-sys.path.insert(0, os.path.abspath(absPath + 'Python_modules/'))
+sys.path.insert(0, os.path.abspath('python'))
 from treeTopologies import *
 
 
 # Change working directory
 directory = absPath + "HKY_radiation"
-os.chdir(directory)
 matrix = "radiation"
 #int(re.match(r'.*M(\d+)', directory).group(1))
 models = 'dta'
@@ -63,6 +56,6 @@ with ProcessPoolExecutor() as executor :
 
 # Write results
 out = pd.concat(out, sort = False, ignore_index = True)
-out.to_csv('analyses/topology_regression_sim1to10.txt', index = False, 
+out.to_csv('inputfiles/topology_regression_sim1to10.txt', index = False, 
     header = True, sep = "\t", na_rep = 'NA')
 
