@@ -9,8 +9,7 @@
 rm(list = ls())
 library(tidyverse)
 
-setwd("/mnt/gaia/MMMI_Rage/")
-source("R_Functions/plot_results.R")
+source("R/plot_results.R")
 
 runTypes = c("dta", "mascot_v7")
 runType = "mascot_V7"
