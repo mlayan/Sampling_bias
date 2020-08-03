@@ -9,31 +9,30 @@
 rm(list = ls())
 library(tidyverse)
 
-source("R/plot_results.R")
+setwd("/mnt/gaia/MMMI_Rage/")
+source("R_Functions/plot_results.R")
 
-runTypes = c("dta", "mascot_v7")
-runType = "mascot_V7"
-threshold = 100
+runTypes = c("dta", "mascot_v8")
+category = "radiation_bis"
+if (!dir.exists(paste0("2.Figures/", category))) dir.create(paste0("2.Figures/", category))
+threshold = 200
 
 #############################################################
 ## Load data 
 ## BEAST data
 data = data.frame()
-dirs = #"HKY_radiation" 
-  c('HKY_M1', 'HKY_M2')
+dirs = paste0("HKY_", category)
 files = paste0("log_files_", runTypes, "_ESS.txt")
 
 for (i in dirs) {
   for (f in files) {
-    print(f)
-    if (nrow(data) == 0) {
-      data = read.table(paste0(i, '/analyses/', f), stringsAsFactors = FALSE, 
-                        header = TRUE, sep = "\t")
-    } else {
-      tempdata = read.table(paste0(i, '/analyses/', f), stringsAsFactors = FALSE, 
+    fileName = paste0(i, '/analyses/', f)
+    if (file.exists(fileName)) {
+      print(f)
+      dataTemp = read.table(fileName, stringsAsFactors = FALSE,
                             header = TRUE, sep = "\t")
-      data = bind_rows(data, tempdata)
-      rm(tempdata)
+      data = bind_rows(data, dataTemp)
+      rm(dataTemp)
     }
   }
 }
@@ -53,7 +52,7 @@ high_ESS = high_ESS[!duplicated(high_ESS), ]
 high_ESS = anti_join(high_ESS, low_ESS)
 
 mutate(high_ESS, model = recode(model, runTypes='mascot')) %>%
-  write.table(., paste0("inputfiles/selected_runs_", runType, ".txt"), sep = "\t", 
+  write.table(., paste0("2.Figures/", category, "/2.selected_runs.txt"), sep = "\t", 
               row.names = FALSE, col.names = TRUE)
 
 # Modify mascot_v* into mascot and  
@@ -62,6 +61,6 @@ right_join(data, high_ESS) %>%
   mutate(model = recode(model, runTypes='mascot')) %>%
   filter(ESS >= threshold || is.na(ESS)) %>%
   data.frame() %>%
-  write.table(., paste0("inputfiles/selected_data_", runType, ".txt"), sep = "\t", 
+  write.table(., paste0("2.Figures/", category, "/2.selected_data.txt"), sep = "\t", 
               row.names = FALSE, col.names = TRUE)
   
