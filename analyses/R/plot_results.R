@@ -135,108 +135,79 @@ normalizeRates <- function(param, inputData) {
 
 #############################################################
 # Regression coefficient
-test_eqn <- function(param, df, test = "lm"){
+test_eqn <- function(param, df, stat = 'median', test = "lm"){
   
   # Retrieve parameters
-  s <- as.numeric(param[1])
-  p <- param[2]
-  if (length(param) == 3) {
+  s <- as.numeric(param[1])  # Sample size
+  p <- param[2]             # Protocol
+  if (length(param) == 3) {  
+    # Matrix 
     ma <- param[3]
     if (ma == "1" | ma == "2") ma = as.numeric(ma)
   } 
   
-  # Subset dataframe
-  df_mascot <- df[df$nSeq == s & df$protocol == p & df$model == "mascot", ] 
-  df_dta <- df[df$nSeq == s & df$protocol == p & df$model == "dta", ]
-  if (length(param) == 3) {
-    df_mascot <- df_mascot[df_mascot$matrix == ma, ] 
-    df_dta <- df_dta[df_dta$matrix == ma, ]
-  }
+  # BEAST models tested
+  models = unique(df$model)
   
+  # Output
+  out = data.frame()
   
-  # Compute regression coefficient
-  if (test == "lm") {
-    
-    m_dta <- lm(mean ~ value.y, df_dta)
-    eq_dta <- substitute(#y == a + b %.% x*","~~
-      r^2~"="~r2, 
-      list(#a = format(unname(coef(m_dta)[1]), digits = 2),
-        #b = format(unname(coef(m_dta)[2]), digits = 2),
-        r2 = format(summary(m_dta)$r.squared, digits = 3)))
-    coef1 = summary(m_dta)$r.squared
-    intercept1 = coef(m_dta)[1]
-    slope1 = coef(m_dta)[2] 
-    
-    if (!nrow(df_mascot)) {
-      
-      # Output as a dataframe
-      out <- data.frame(nSeq = s, protocol = p,  
-                        model = "dta",
-                        coef = as.character(as.expression(eq_dta)), 
-                        r = coef1, slope = slope1, intercept = intercept1) 
-      
-      
-    } else {
-      
-      # Compute regression coefficient
-      m_mascot <- lm(mean ~ value.y, df_mascot)
-      eq_mascot <- substitute(r^2~"="~r2, 
-        list(r2 = format(summary(m_mascot)$r.squared, digits = 3)))
-      coef2 = summary(m_mascot)$r.squared
-      intercept2 = coef(m_mascot)[1]
-      slope2 = coef(m_mascot)[2] 
-      
-      # Output as a dataframe
-      out <- data.frame(nSeq = rep(s,2), protocol = rep(p, 2), 
-                        model = c("mascot", 'dta'),
-                        coef = c(paste0("mascot: ", as.character(as.expression(eq_mascot))),
-                                 paste0("dta: ", as.character(as.expression(eq_dta)))), 
-                        r = c(coef2, coef1), 
-                        slope = c(slope2, slope1), 
-                        intercept = c(intercept2, intercept1)) 
+  for (model in models) {
+    # Subset dataframe 
+    df_sub = df[df$nSeq == s & df$protocol == p & df$model == model, ]
+    if (length(param) == 3) {
+      df_sub <- df_sub[df_sub$matrix == ma, ] 
     }
     
-    
-  } 
-  else if (test == "spearman") {
-    
-    s_dta <- cor.test(df_dta$mean, df_dta$value.y, method = "spearman")
-    eq_s_dta <- paste0('dta: = ', format(s_dta$estimate, digits = 3), 
-                       ", p = ", format(s_dta$p.value, digits = 3))
-    p1 = s_dta$p.value
-    rho1 = s_dta$estimate
-    
-    if (!nrow(df_mascot)) {
+    # Compute regression coefficient
+    if (test == "lm") {
+      if (stat == "median") lModel <- lm(X50 ~ value.y, df_sub)
+      if (stat == "mean") lModel <- lm(mean ~ value.y, df_sub)
+      eq <- substitute(#y == a + b %.% x*","~~
+        r^2~"="~r2, 
+        list(#a = format(unname(coef(m_dta)[1]), digits = 2),
+          #b = format(unname(coef(m_dta)[2]), digits = 2),
+          r2 = format(summary(lModel)$r.squared, digits = 3)))
+      coef = summary(lModel)$r.squared
+      intercept = coef(lModel)[1]
+      slope = coef(lModel)[2] 
       
-      # Output as a dataframe
-      out <- data.frame(nSeq = s, protocol = p,  
-                        model = "dta",
-                        coef = eqn_s_dta, 
-                        rho = rho1, p = p1) 
+      # Append results to output
+      outTemp <- data.frame(nSeq = s, 
+                            protocol = p,  
+                            model = model,
+                            coef = as.character(as.expression(eq)), 
+                            r = coef, 
+                            slope = slope, 
+                            intercept = intercept) 
       
+      out = bind_rows(out, outTemp)
       
+    } else if (test == "spearman") {
+      if (stat == 'mean') sModel <- cor.test(df_sub$mean, df_sub$value.y, method = "spearman")
+      if (stat == 'median') sModel <- cor.test(df_sub$X50, df_sub$value.y, method = "spearman")
+      eqS <- paste0(model, ": ", rho, ' = ', format(sModel$estimate, digits = 3), 
+                         ", p = ", format(sModel$p.value, digits = 3))
+      pVal = sModel$p.value
+      rho = sModel$estimate
+      
+      # Append results to output
+        out <- data.frame(nSeq = s, 
+                          protocol = p,  
+                          model = model,
+                          coef = eqS, 
+                          rho = rho, 
+                          p = pVal) 
+        
+    
     } else {
-      
-      # Compute regression coefficient
-      s_mascot <- cor.test(df_mascot$mean, df_mascot$value.y, method = "spearman")
-      eq_s_mascot <- paste0('mascot: r = ', format(s_mascot$estimate, digits = 3), 
-                            ", p = ", format(s_mascot$p.value, digits = 3))
-      p2 = s_mascot$p.value
-      rho2 = s_mascot$estimate
-      
-      # Output as a dataframe
-      out <- data.frame(nSeq = rep(s,2), protocol = rep(p, 2), 
-                        model = c("mascot", 'dta'),
-                        coef = c(eq_s_mascot, eq_s_dta), 
-                        rho = c(rho2, rho1), 
-                        p = c(p2, p1)) 
+      warning("The test argument is not valide")
     }
-  } else {
-    warning("The test argument is not valide")
   }
   
   if (length(param) == 3) out$matrix = ma
   return(out)
+  
 }
 
 #############################################################
