@@ -32,6 +32,7 @@ from beastLogDictionaries import *
 
 
 
+
 def renameColumns(log, runType, fileName):
 	"""
 	Function that renames the columns and slice the beast log file according to
@@ -490,11 +491,32 @@ def rootLocationAnalysis(fileName, directory, model, regions,
 
 		# Root annotations
 		rootAnnotations = tree.seed_node.annotations
+		# nRegions = len(rootAnnotations.get_value(name="max.set"))
+		# if nRegions != len(regions):
+		# 	nRegions = len(regions)
 
 		# KL divergence
 		p = [rootAnnotations.get_value(name = x) for x in regions]
 		p = [float(x) if x else 0.0 for x in p]
+		# p = [float(x) for x in rootAnnotations.get_value(name = "max.set.prob")]
 		kl = KLRootPrediction(p, len(regions), True)
+
+		# Probability per region 
+		# stored in a dataframe
+		# r = [re.sub('"', '', x) for x in rootAnnotations.get_value(name = "max.set")]
+		# r = [re.sub(' ', '', x) for x in r]
+
+		# # Add regions in the sample but not inferred as root location
+		# for x in regions:
+		# 	if x not in r:
+		# 		r.append(x)
+		# 		p.append(0.0)
+
+		# # Add regions not in the sample with NA as value
+		# for x in allRegions:
+		# 	if x not in r:
+		# 		r.append(x)
+		# 		p.append(float('nan'))
 
 		# Create the dataframe
 		out = pd.DataFrame({"parameter": regions, "value": p})

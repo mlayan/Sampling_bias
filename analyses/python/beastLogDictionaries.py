@@ -182,7 +182,6 @@ mascotDict = {
 	'prior': 'prior',
 	'likelihood':'likelihood',
 	'treeHeight':'treeHeight',
-	#'treeLikelihood.filename':'treeLikelihood',
 	'clockRate':'clockRate',
 	'kappa':'kappa',
 	'freqParameter.1':'freqA',
