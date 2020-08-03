@@ -122,54 +122,6 @@ def countsAndRates(df, t):
 
 	return(out)
 
-	"""
-	# Transform source and region columns into parameterChar column
-	counts['regions.source']= counts['regions.source'].str.replace(' ', '')
-	counts['regions']= counts['regions'].str.replace(' ', '')
-	counts['parameterChar'] = counts['regions.source'] + "_" + counts['regions']
-	counts.drop(columns = ['regions.source', 'regions'], inplace=True)
-
-	# Create two copies for the rates 
-	rates = counts.copy()
-	rates['value'] = rates['value'] / t
-
-	# Add parameter column
-	counts['parameter'] = "migrationCount"
-	rates['parameter'] = "migrationRate"
-
-	# Concatenate dataframes
-	out = pd.concat([counts, rates], ignore_index=True)
-
-	return(out)
-	"""
-
-
-
-
-
-
-
-
-
-"""
-def trimPhylogeny(subset, phylogeny, type):
-	Function to trim a phylogeny based on a set of samples and the complete phylogeny.
-		- subset: subset of samples to which the phylogeny should be trimmed
-		- phylogeny: dataframe corresponding to the transmission chain.
-		It should contain two columns:
-			- case: name of the cases in the following format "patch_uniqueid"
-			- source: name of the infector of case in the same format "patch_uniqueid"
-			- ??
-		- type: string specifying how the phylogeny should be trimmed
-		It can take the following arguments:
-			- date: returns the phylogeny with no sequences older than the oldest sequence in from subset
-			- mrca: returns the phylogeny with the complete offspring of the MRCA of subset until the latest sequence in subset 
-			- stringent: returns the phylogeny with the offspring of the MRCA restricted to branches ending by one of the sequence from subset
-
-	It returns the phylogeny dataframe with rows corresponding to the desired ancestors
-	"""
-
-
 
 
 
@@ -467,11 +419,7 @@ def migrationEvents(filename, matrix, protocol,
 
 	##################################################
 	## Directory name 
-	if directory:
-		if not re.search(r'/$', directory):
-			directory += "/"
-	else:
-		directory = ""
+	directory = checkDirectory(directory)
 
 	##################################################
 	## Load and rearrange the transmission chain 
@@ -479,9 +427,13 @@ def migrationEvents(filename, matrix, protocol,
 	transChain = pd.read_csv(directory + filename, sep="\t", header = 0)
 
 	# Drop the row corresponding to the root
-	transChain = transChain[transChain['case'] != "0_0"]
+	transChain = transChain[transChain['case'] != root[0]]
 
 	# Add regions.source column to transChain
+	if len(transChain.patch.unique()) == 7:
+		regionDic = ecoRegionDic
+	else:
+		regionDic = demesDic
 	transChain['regions.source'] = transChain['patch.source'].replace(regionDic)
 
 	# nSim 
@@ -495,10 +447,6 @@ def migrationEvents(filename, matrix, protocol,
 
 		# nSeq doesn't take the size of the sample but na
 		nSeq = float("nan")
-
-		## Slice the transChain dataframe to get 
-		##    regions and regions.source only
-		t = transChain
 
 	else:
 		if protocol not in protocols:
@@ -564,7 +512,10 @@ def migrationEvents(filename, matrix, protocol,
 
 	##################################################
 	## Get migration events counts and rates 
-	counts = countsAndRates(t, nDays)
+	if protocol == "all":
+		counts = countsAndRates(transChain, nDays)
+	else:
+		counts = countsAndRates(t, nDays)
 
 	##################################################
 	## Make the last modifications
