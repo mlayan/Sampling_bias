@@ -7,6 +7,8 @@
 # Last update : 30/06/2020
 ########################################################
 
+# devtools::install_github('SEEG-Oxford/movement')
+# library(movement)
 
 rm(list = ls())
 library(rgdal)
@@ -14,11 +16,13 @@ library(rgeos)
 library(dplyr)
 library(raster)
 library(sf)
+library(igraph)
+setwd("/mnt/gaia/MMMI_Rage/Input_files/")
 
 # Number of demes
 demes <- 
-  "3demes"
-#  "ecoregions"
+#  "3demes"
+  "ecoregions"
 
 # Colors 
 if (demes == "3demes") COLS = c("palegreen", "orange", "blue")
@@ -26,7 +30,7 @@ if (demes == "ecoregions") COLS = c("palegreen", "green", "darkgreen", "yellow",
 
 # Aggregate the predicted mobility matrix---------------
 # Load data
-load("inutfiles/1.predict_mobility.RData")
+load("1.predict_mobility.RData")
 inhab_poly = as_Spatial(st_read(paste0("gadm36_MAR_", demes, ".shp")), IDs = "AGG_ID")
 if (demes == "3demes") inhab_poly = inhab_poly[order(inhab_poly$REGIONS), ]
 if (demes == "ecoregions") inhab_poly = inhab_poly[order(inhab_poly$AGG_ID), ]
@@ -40,7 +44,7 @@ to_consider = which(getValues(!is.na(inhab_raster)))
 while (length(cells) != 0) {
   for (cell in cells) {
     adj = adjacent(inhab_raster, cell, target = to_consider)
-    if (class(adj) == "numeric") {
+    if (class(adj)[1] == "numeric") {
       inhab_raster[cell] = inhab_raster[adj[2]]
     } else {
       if (length(adj) != 0) {
@@ -72,7 +76,7 @@ out = t(rowsum(t(xsum), grouping$ID))
 diag(out) = 0
 
 # Plot directed graph
-# Origins corresponds to rows in the movement matrix and destinations to columns
+# Origins corresponds to rows and destinations to columns in the movement matrix 
 # See function "as.data.frame.movement_matrix" in the source code available here https://github.com/SEEG-Oxford/movement/blob/master/R/movement.R 
 adjMat = matrix(1, nrow = nrow(out), ncol = ncol(out))
 diag(adjMat) = 0
@@ -99,5 +103,5 @@ plot(inhab_poly, col = COLS)
 dev.off()
 
 # Write the mobility matrix of ecoregions
-write.table(out, paste0("inputfiles/mobility_matrix_", demes, ".txt"), sep = "\t", 
+write.table(out, paste0("mobility_matrix_", demes, ".txt"), sep = "\t", 
             row.names = FALSE, col.names = FALSE)

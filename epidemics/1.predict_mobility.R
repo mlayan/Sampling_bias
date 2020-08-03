@@ -14,8 +14,7 @@ library(movement)
 
 # Load raster data-------------------------------------
 # Raster with number of inhabitants per pixel
-# UN adjusted population counts in Morocco in 2015 from WorldPop
-inhab <- raster("inputfiles/MAR_ppp_v2b_2015_UNadj.tif") # available here: https://www.worldpop.org/geodata/summary?id=27690 
+inhab <- raster("MAR_ppp_v2b_2015_UNadj.tif")
 proj4string(inhab) <- CRS("+init=epsg:4326")
 
 # Build network on aggregated map----------------------
@@ -39,4 +38,4 @@ movement_model <- movement(movement_matrix ~ location_data, originalRadiation())
 
 # Predict movements
 predicted_movements  <- predict(movement_model, inhab20)
-save.image("inputfiles/1.predict_mobility.RData")
+save.image("1.predict_mobility.RData")
