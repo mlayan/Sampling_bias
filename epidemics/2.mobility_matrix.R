@@ -7,10 +7,10 @@
 # Last update : 30/06/2020
 ########################################################
 
-# devtools::install_github('SEEG-Oxford/movement')
-# library(movement)
-
 rm(list = ls())
+
+#devtools::install_github('SEEG-Oxford/movement')
+library(movement)
 library(rgdal)
 library(rgeos)
 library(dplyr)
@@ -18,6 +18,7 @@ library(raster)
 library(sf)
 library(igraph)
 setwd("/mnt/gaia/MMMI_Rage/Input_files/")
+# setwd("X:/Input_files/")
 
 # Number of demes
 demes <- 
@@ -103,5 +104,5 @@ plot(inhab_poly, col = COLS)
 dev.off()
 
 # Write the mobility matrix of ecoregions
-write.table(out, paste0("mobility_matrix_", demes, ".txt"), sep = "\t", 
+write.table(out, paste0("mobility_matrix_", demes, "_full.txt"), sep = "\t", 
             row.names = FALSE, col.names = FALSE)
