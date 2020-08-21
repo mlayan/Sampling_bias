@@ -18,29 +18,18 @@ import os
 import sys
 import re
 import math
-import time
 from concurrent.futures import ProcessPoolExecutor
 import pandas as pd
 import numpy as np
 
-# Absolute paths
-# Local computer
-#stAbs = "/mnt/gaia/"
-
-# Work on the cluster
-stAbs = "/pasteur/projets/common/"
-
 ## Import custom functions
-sys.path.append(stAbs + 'MMMI_Rage/Python_modules')
+sys.path.append('../python/')
 from simulatedTrees import *
 
 ## Directory
 cond = 'mig' + str(sys.argv[1])
-directory = stAbs + "MMMI_Rage/HKY_migrationrates/" + cond
+directory = "../" + cond
 os.chdir(directory)
-
-# Matrix
-nMatrix = re.search(r'HKY_(.*)/', directory).group(1)
 
 ## Region dictionary
 regionDic = {
@@ -72,23 +61,15 @@ protocols += protocols * (nFiles - 1)
 
 # Helper function to pass correctly arguments to the mapper
 def helperF(f,p,d):
-    return(migrationEvents(f, nMatrix, p, regionDic = regionDic,
+    return(migrationEvents(f, cond, p, regionDic = regionDic,
     	extractNewickTree=True, directory=d))
 
 
 # Get summary tables for each Beast run
-start = time.time()
-
 with ProcessPoolExecutor() as executor:
     results = []
     for result in executor.map(helperF, logFiles, protocols, directories):
         results.append(result)
-
-end = time.time()
-
-print("\nComputational time:")
-print(end-start)
-
 
 # Concatenate dataframes
 data = pd.concat(results, axis = 0)
