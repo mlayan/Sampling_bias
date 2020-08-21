@@ -15,7 +15,7 @@ library(movement)
 
 # Load raster data-------------------------------------
 # Raster with number of inhabitants per pixel
-inhab <- raster("../inputfiles/MAR_ppp_v2b_2015_UNadj.tif")
+inhab <- raster("MAR_ppp_v2b_2015_UNadj.tif") # available here: https://www.worldpop.org/geodata/summary?id=27690
 proj4string(inhab) <- CRS("+init=epsg:4326")
 
 # Build network on aggregated map----------------------
