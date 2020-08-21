@@ -17,10 +17,8 @@ __last_update__ = '2020-05-'
 import os
 import sys
 import re
-import math
 from concurrent.futures import ProcessPoolExecutor
 import pandas as pd
-import numpy as np
 
 ## Import custom functions
 sys.path.append('../python/')
