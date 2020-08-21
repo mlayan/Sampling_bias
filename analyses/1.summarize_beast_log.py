@@ -1,81 +1,81 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 """
-ANALYZE BEAST LOG FILES
+ANALYZE SIMULATION FILES 
+- Write Newick trees
+- Compute migration events and regions frequencies
+- Compute association index of the tree 
 """
 
 # Description  
 __author__ = 'Maylis Layan'
-__creation_date__ = '2020-02-28' 
-__last_update__ = '2020-05-13'
+__creation_date__ = '2020-05-06' 
+__last_update__ = '2020-05-'
 
 # Import libraries
 import os
 import sys
 import re
 import math
-import time
-import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
+import pandas as pd
+import numpy as np
 
 ## Import custom functions
-sys.path.append('python')
-from geneticAndSpatialEstimates import *
-
-# runType
-runType = "mascot_v8"
+sys.path.append('../python/')
+from simulatedTrees import *
 
 ## Directory
-directory = stAbs + "MMMI_Rage/HKY_M1/"
+cond = 'mig' + str(sys.argv[1])
+directory = "../" + cond
 os.chdir(directory)
 
-# Matrix
-nMatrix = int(re.search(r'M([\d]+)/', directory).group(1))
+## Region dictionary
+regionDic = {
+1: "Region1",
+2: "Region2",
+3: "Region3",
+4: "Region4",
+5: "Region5",
+6: "Region6",
+7: "Region7"
+}
 
+##########################################
 # Load log files
 logFiles = []
 directories = []
+nFiles = 0
 
-for entry in os.scandir():    
-    if entry.is_dir() and entry.name.startswith('simulation'):
-        nSim = int(re.search(r'\d+$', entry.name).group(0))
-        
-        if nSim < 11:
-            for files in os.scandir(entry.name + "/" + runType):
-                if files.is_file() and files.name.endswith('log.txt') \
-                						and 'stratified' not in files.name :
-                    logFiles.append(files.name)
-                    directories.append(entry.name + "/" + runType)
+for root, subdirs, files in os.walk('.'):
+	if 'files' in root:
+		for f in files:
+			if 'transmission_chain' in f:
+				logFiles += [f] * len(protocols)
+				directories += [root] * len(protocols)
+				nFiles += 1
+
+protocols += protocols * (nFiles - 1)
+
+
+# Helper function to pass correctly arguments to the mapper
+def helperF(f,p,d):
+    return(migrationEvents(f, cond, p, regionDic = regionDic,
+    	extractNewickTree=True, directory=d))
 
 
 # Get summary tables for each Beast run
-def helperF(f,d):
-    return(logFileWrangler(f, d, nMatrix, runType, 
-        rootLocation = True, forwards = "all", ess = True))
-
-start = time.time()
-
 with ProcessPoolExecutor() as executor:
-    out = []
-    
-    for result in executor.map(helperF, logFiles, directories):
-        out.append(result)
-        
-end = time.time()
-
-print("\nComputational time:")
-print(end-start)
-print("\n")
+    results = []
+    for result in executor.map(helperF, logFiles, protocols, directories):
+        results.append(result)
 
 # Concatenate dataframes
-data = pd.concat(out, axis = 0)
+data = pd.concat(results, axis = 0)
 
 # Write the dataframe
-data.to_csv('inputfiles/log_files_' + runType + '_ESS.txt', 
+data.to_csv('analyses/migration_events_sim1to10_' + cond + '.txt', 
             index = False, 
             header = True, 
             sep = '\t', 
