@@ -10,11 +10,12 @@
 library(rgdal)
 library(raster)
 library(dplyr)
+#devtools::install_github('SEEG-Oxford/movement')
 library(movement)
 
 # Load raster data-------------------------------------
 # Raster with number of inhabitants per pixel
-inhab <- raster("MAR_ppp_v2b_2015_UNadj.tif")
+inhab <- raster("../inputfiles/MAR_ppp_v2b_2015_UNadj.tif")
 proj4string(inhab) <- CRS("+init=epsg:4326")
 
 # Build network on aggregated map----------------------
@@ -38,4 +39,4 @@ movement_model <- movement(movement_matrix ~ location_data, originalRadiation())
 
 # Predict movements
 predicted_movements  <- predict(movement_model, inhab20)
-save.image("1.predict_mobility.RData")
+save.image("../inputfiles/1.predict_mobility.RData")
