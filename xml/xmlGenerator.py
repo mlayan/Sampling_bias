@@ -15,6 +15,8 @@ import os
 import sys
 import re
 import pandas as pd
+import numpy as np
+
 
 # Import modules
 from lxml import etree
@@ -304,6 +306,18 @@ def addMarkovJumps(template, regions):
 	regionsCount = etree.Element('trait', name='regions.count', tag='regions.count')
 	regionsCount.append(etree.Element('ancestralTreeLikelihood', idref='regions.treeLikelihood'))
 	root.find('mcmc/logTree').append(regionsCount)
+
+	"""
+	# Add the complete history file 
+	logTree = etree.Element('logTree', 
+	fileName='filename.regions.history.trees.txt',
+	logEvery=str(0),
+	nexusFormat='true',
+	sortTranslationTable='true')
+	logTree.append(etree.Element('treeModel', idref='treeModel'))
+	logTree.append(etree.Element('markovJumpsTreeLikelihood', idref='regions.treeLikelihood'))
+	root.find('mcmc').append(logTree)
+	"""
 
 	return(template)
 
@@ -863,7 +877,10 @@ def bash_xml(fileName, directory, logEvery, beastVersion):
 
 
 def estimationOnFixedTree(template, outputFileName, tree):
-	""""""
+	"""
+
+
+	"""
 	# Edit the run/init element
 	for node in template.xpath('run/init[re:match(@id, "^RandomTree")]',namespaces={'re':regexpNS}):
 		node.set('newick', Phylo.Newick.BaseTree.Tree.format(tree, 'newick').replace("\n", ""))
