@@ -21,6 +21,7 @@ An HKY prior is used to model sequence evolution. Population dynamics are descri
 Default operators and priors specific to each model are implemented.   
 
 ### Analysis of BEAST outputs and simulated epidemics
+Scripts and intermediary files are located in `analyses`.
 BEAST log files from the same BEAST model are summarized into a single tab-delimited file. This file stores basic summary statistics of inferred parameters (mean, median, 95%-CI, 95%-HPD, standard deviation, minimum, maximum) as well as the ESS computed using BEAST2 function. For MASCOT files, backwards-in-time migration rates are converted into forwards-in-time migration rates. Since BSSVS is implemented on migration rates, the Bayes factor is calculated using the corresponding indicator variables. Finally, root location probabilities is retrieved either from log files (DTA model) or from mcc trees (MASCOT model).  
 In parallel, migration rates and root location of the MRCA of the sampled tips are calculated from simulated transmission chains and collated in tab-delimited files. Newick trees for each sample are also extracted from simulated transmission chains and stored in the `files` sub-directory.
 BEAST chains with the ESS of the prior, posterior or likelihood lower than 200 are discarded.
