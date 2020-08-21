@@ -14,8 +14,7 @@ library(grid)
 library(gtable)
 library(gridExtra)
 
-setwd("/mnt/gaia/MMMI_Rage/")
-source('R_Functions/plot_results.R')
+source('../R/plot_results.R')
 
 runType = "radiation_bis"
 category = paste0('HKY_', runType)
