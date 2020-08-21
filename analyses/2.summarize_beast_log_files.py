@@ -18,7 +18,7 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 
 ## Import custom functions
-sys.path.append('../python/')
+sys.path.append('/python/')
 from geneticAndSpatialEstimates import *
 
 ###############################################
