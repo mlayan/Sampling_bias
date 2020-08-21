@@ -33,6 +33,9 @@ threshold = 100
 bias <- c('uniform', 'biased_2.5', 'biased_5', 'biased_10', 'biased_20', 'biased_50')
 surveillance <- c('uniformS', 'maxPerRegion', 'maxPerRegionYear')
 
+bias2 <- c('uniform', 'biased_10', 'biased_20')
+surveillance2 <- c('uniformS', 'maxPerRegionYear')
+
 # All sampling protocols
 all = c('uniform_150', 'biased_2.5_150', 'biased_5_150', 'biased_10_150', 'biased_20_150', 'biased_50_150', 
         'uniform_500', 'biased_2.5_500', 'biased_5_500', 'biased_10_500', 'biased_20_500', 'biased_50_500',
@@ -40,9 +43,12 @@ all = c('uniform_150', 'biased_2.5_150', 'biased_5_150', 'biased_10_150', 'biase
         'uniformS_500', 'maxPerRegion_500', 'maxPerRegionYear_500')
 
 # Regions
-regions = c("WesternMediterraneancoast", "EasternMediterraneancoast", 
-            "NorthAtlanticcoast", "SouthAtlanticcoast", "NorthernAtlas", 
-            'SouthernAtlas', "AntiAtlas")
+# regions = c("WesternMediterraneancoast", "EasternMediterraneancoast", 
+#             "NorthAtlanticcoast", "SouthAtlanticcoast", "NorthernAtlas", 
+#             'SouthernAtlas', "AntiAtlas")
+
+regions = c("Region1", "Region2", "Region3", "Region4", "Region5", 
+            'Region6', "Region7")
 
 #############################################################
 ##  FUNCTIONS
