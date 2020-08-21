@@ -19,27 +19,23 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 
 # Import personnal modules 
-absPath = '/pasteur/projets/common/MMMI_Rage/'
-sys.path.insert(0, os.path.abspath(absPath + 'Python_modules/'))
+sys.path.insert(0, os.path.abspath('/python/'))
 from treeTopologies import *
 
 # Change working directory
 cond = 'mig' + str(sys.argv[1])
-directory = absPath + "HKY_migrationrates/" + cond 
+directory = "../" + cond 
 os.chdir(directory)
 
-# Matrix
-matrix = re.search(r'HKY_(.*)/', directory).group(1)
-
 # Models
-models = 'dta'
+models = 'dta' # list of models ('dta', 'mascot', ['mascot', 'dta'])
 
 # List of files
 treeList = []
 dirList = []
 
 for root, subdirs, files in os.walk('.'):
-    if 'dta' in root:
+    if root in models:
         for f in files:
             if '.mcc.tree' in f:
                 treeList.append(f)
@@ -47,7 +43,7 @@ for root, subdirs, files in os.walk('.'):
 
 # Helper Function
 def helperF(t, d):
-    return(compareBeasttoSimulation(t, matrix, d, *models))
+    return(compareBeasttoSimulation(t, cond, d, *models))
 
 # Perform linear regressions
 with ProcessPoolExecutor() as executor : 
