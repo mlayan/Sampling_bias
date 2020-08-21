@@ -16,14 +16,9 @@ library(rgeos)
 library(dplyr)
 library(raster)
 library(sf)
-library(igraph)
-setwd("/mnt/gaia/MMMI_Rage/Input_files/")
-# setwd("X:/Input_files/")
 
 # Number of demes
-demes <- 
-#  "3demes"
-  "ecoregions"
+demes <- "ecoregions"
 
 # Colors 
 if (demes == "3demes") COLS = c("palegreen", "orange", "blue")
@@ -31,8 +26,8 @@ if (demes == "ecoregions") COLS = c("palegreen", "green", "darkgreen", "yellow",
 
 # Aggregate the predicted mobility matrix---------------
 # Load data
-load("1.predict_mobility.RData")
-inhab_poly = as_Spatial(st_read(paste0("gadm36_MAR_", demes, ".shp")), IDs = "AGG_ID")
+load("../inputfiles/1.predict_mobility.RData")
+inhab_poly = as_Spatial(st_read(paste0("../inputfiles/gadm36_MAR_", demes, ".shp")), IDs = "AGG_ID")
 if (demes == "3demes") inhab_poly = inhab_poly[order(inhab_poly$REGIONS), ]
 if (demes == "ecoregions") inhab_poly = inhab_poly[order(inhab_poly$AGG_ID), ]
 
@@ -76,33 +71,6 @@ xsum = rowsum(mobility, grouping$ID)
 out = t(rowsum(t(xsum), grouping$ID))
 diag(out) = 0
 
-# Plot directed graph
-# Origins corresponds to rows and destinations to columns in the movement matrix 
-# See function "as.data.frame.movement_matrix" in the source code available here https://github.com/SEEG-Oxford/movement/blob/master/R/movement.R 
-adjMat = matrix(1, nrow = nrow(out), ncol = ncol(out))
-diag(adjMat) = 0
-outLong = mutate(data.frame(out), source = row.names(out)) %>%
-  tidyr::pivot_longer(-source, names_to = "destination", values_to = "weights") %>%
-  mutate(destination = gsub("X", "", destination)) %>%
-  filter(source != destination)
-outLong$col = rep(COLS,
-                  each = nrow(out)-1)
-
-network = graph_from_adjacency_matrix(adjMat)
-png(paste0("connectivity_graph_", demes, ".png"))
-plot(network, vertex.color = COLS, 
-     edge.color = outLong$col,
-     edge.arrow.size = 0, edge.arrow.width = 0,
-     edge.width = outLong$weights/90000, 
-     edge.curved = 0.3, 
-     layout=layout.circle)
-dev.off()
-
-# Plot polygons with same color scheme
-png(paste0('connectivity_color_poly_', demes, ".png"))
-plot(inhab_poly, col = COLS)
-dev.off()
-
 # Write the mobility matrix of ecoregions
-write.table(out, paste0("mobility_matrix_", demes, "_full.txt"), sep = "\t", 
-            row.names = FALSE, col.names = FALSE)
+write.table(out, paste0("../inputfiles/mobility_matrix_", demes, ".txt"), 
+            sep = "\t", row.names = FALSE, col.names = FALSE)
