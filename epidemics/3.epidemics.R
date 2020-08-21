@@ -10,7 +10,6 @@
 #############################################################
 
 rm(list = ls())
-setwd("..")
 
 # Arguments 
 args <- commandArgs(trailingOnly=T)
@@ -32,21 +31,21 @@ library(foreach)
 
 # Models and functions
 # Epidemic model
-sourceCpp("../R_Functions/cpp_model_v5.cpp")
-sourceCpp("../R_Functions/cpp_beta_mat.cpp")
+sourceCpp("../R/cpp_model_v5.cpp")
+sourceCpp("../R/cpp_beta_mat.cpp")
 
 # Evolutionary model
-source('../R_Functions/HKY_v2.R')
+source('../R/HKY_v2.R')
 
 # Sampling protocols
-source('../R_Functions/sampling_protocols_v2.R')
+source('../R/sampling_protocols_v2.R')
 
 # Arguments
   # Spatial resolution
 initPatch <- 1
 
   # Sequence simulation
-ref <- read.fasta("../Input_files/RV2627.fasta", forceDNAtolower = FALSE, set.attributes = FALSE)[[1]]
+ref <- read.fasta("../inputfiles/RV2627.fasta", forceDNAtolower = FALSE, set.attributes = FALSE)[[1]]
 mut.rate <- 2.44e-4/365.25
 kappa <- 2
 root.date <- as.Date("1989-01-01")
@@ -76,12 +75,12 @@ weightsRegions[c(3,4),5] <- 20
 weightsRegions[c(3,4),6] <- 50
 
   # Human population
-inhab = read.csv("../Input_files/inhabitants_per_ecoregion_UNadj.csv", 
+inhab = read.csv("../inputfiles/inhabitants_per_ecoregion_UNadj.csv", 
                  stringsAsFactors = FALSE, encoding = "latin1")
 human_pop = sapply(sort(unique(inhab$agg.id)), function(x) sum(inhab$ind[inhab$agg.id == x]))
 
   # Human mobility
-distance =  as.matrix(read.table("../Input_files/mobility_matrix_ecoregions.txt", header = FALSE))
+distance =  as.matrix(read.table("../inputfiles/mobility_matrix_ecoregions.txt", header = FALSE))
 mobility = TRUE
 
 ############################################################
@@ -135,7 +134,7 @@ out <- foreach (i=1:10,
                 .packages = c("seqinr", "lubridate", "Rcpp", "dplyr", "ape"))  %dorng% {
                   
                   # Create directory if not existing
-                  listDir <- list.dirs(full.names = F, recursive = T)
+                  listDir <- list.dirs("..", full.names = F, recursive = T)
                   directory <- paste0("mig", args[1], "/simulation", i, "/files")
                   if (!directory %in% listDir) dir.create(directory, recursive = T)
                   
@@ -239,4 +238,4 @@ simulationsSummary <- data.frame(out)
 colnames(simulationsSummary) <- c("simulation", "epidemicSize", "epidemicCompTime", "epidemicCompUnit", 
                                   "evolutionCompTime", "evolutionCompUnit")
 
-write.table(simulationsSummary, paste0("generate/simulation_summary_launch_", args[1], ".txt"), sep ="\t", row.names = FALSE)
+write.table(simulationsSummary, paste0("simulation_summary_launch_", args[1], ".txt"), sep ="\t", row.names = FALSE)
