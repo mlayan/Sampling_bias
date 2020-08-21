@@ -14,8 +14,10 @@ __last_update__ = '2020-04-21'
 import os
 import sys
 import re
+import math
 import random
 import dendropy
+import itertools
 import pandas as pd
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
@@ -67,8 +69,9 @@ def getAncestors(individual, transmissionChain):
 
 
 
-def countsAndRates(df, t):
-	""" Function to compute the number of migration events from a transmission chain dataframe
+def countsAndRates(df, t, regionDic):
+	""" 
+	Function to compute the number of migration events from a transmission chain dataframe
 	Parameters:
 		- df (pandas dataframe): transmission chain with columns
 			regions : names of cases' region
@@ -90,6 +93,11 @@ def countsAndRates(df, t):
 	counts['parameterChar'] = counts['regions.source'] + "_" + counts['regions']
 	counts['parameterChar'] = counts['parameterChar'].str.replace(' ', '')
 	counts.drop(columns = ['regions.source', 'regions'], inplace=True)
+
+	# Migration list
+	migrationList = list(regionDic.values())
+	migrationList = list(itertools.permutations(migrationList, 2))
+	migrationList = [x + "_" + y for x,y in migrationList]
 
 	# Add Na for migrations which do not occur in the simulation
 	absent = []
@@ -238,11 +246,13 @@ def treeScan(ind, df, nodeDate = None):
 			raise ValueError("{0} appears multiple times in the dataframe as a tip".format(ind))
 
 		if label[0].is_integer():
-			labelString = round(label[0])
+			labelString = str(math.ceil(label[0]))
 		else:
-			labelString = round(label[0], 6)
+			labelString = str(round(label[0], 6))
 
-		out = ind + "_" + str(labelString)
+		print(labelString)
+
+		out = ind + "_" + labelString
 		return(out, label[0])
 
 
@@ -387,7 +397,7 @@ def trimPhylogeny2(transChain, tips, ancestorsList, ancestorsCommon, rootTree):
 
 
 
-def migrationEvents(filename, matrix, protocol, 
+def migrationEvents(filename, matrix, protocol, regionDic, 
 	extractNewickTree = False, directory = None):
 	"""
 	Function that computes the number of migration events between locations on the complete 
@@ -430,15 +440,14 @@ def migrationEvents(filename, matrix, protocol,
 	transChain = transChain[transChain['case'] != root[0]]
 
 	# Add regions.source column to transChain
-	if len(transChain.patch.unique()) == 7:
-		regionDic = ecoRegionDic
-	else:
-		regionDic = demesDic
 	transChain['regions.source'] = transChain['patch.source'].replace(regionDic)
 
 	# nSim 
 	nSim = re.findall(r'sim([0-9]+)_', filename)[0]
 
+	# Location of the start of the epidemic
+	rootLocation = list(regionDic.values())[0]
+	
 	##################################################
 	## Extract informations 
 	if protocol == "all":
@@ -513,9 +522,9 @@ def migrationEvents(filename, matrix, protocol,
 	##################################################
 	## Get migration events counts and rates 
 	if protocol == "all":
-		counts = countsAndRates(transChain, nDays)
+		counts = countsAndRates(transChain, nDays, regionDic)
 	else:
-		counts = countsAndRates(t, nDays)
+		counts = countsAndRates(t, nDays, regionDic)
 
 	##################################################
 	## Make the last modifications

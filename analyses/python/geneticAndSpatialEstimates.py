@@ -24,7 +24,6 @@ from simulatedTrees import getAncestors
 from handleDirectories import checkDirectory
 
 ## Import regions and log files columns dictionaries
-from regionsDictionaries import *
 from beastLogDictionaries import * 
 
 
@@ -33,87 +32,23 @@ from beastLogDictionaries import *
 
 
 
-def renameColumns(log, runType, fileName):
-	"""
-	Function that renames the columns and slice the beast log file according to
-	the type of beast model.
-	Arguments :
-		- log (dataframe): log file corresponding to the beast .log.txt file without the burnin
-		- runType (string): type of beast run
-		For each runType, a specific dictionary is called from the beastLogDictionaries module
-			"beast1" or "DTA" uses beast1Dict
-			"mascot" used mascotDict
-			"basta" uses bastaDict
-		- fileName (str): name of the file
-
-	It returns the same log file (values are not modified) with renamed columns.
-	In the case of beast1 models, four columns are dropped. 
-		- default.meanRate is the same as default.clock.rate for strict molecular clock models
-		- regions.meanRate is the same as regions.clock.rate for strict molecular clock models
-		- default.branchRates and regions.branchRates are equal to 0
-	"""
-	if runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"]:
-		# Drop specific columns
-
-		log.drop(columns = ['default.meanRate', 
-			'regions.meanRate', 
-			'default.branchRates',
-			'regions.branchRates'], 
-			inplace = True,
-			errors='ignore')
-
-		# Rename columns
-		log.rename(columns = beast1Dict, inplace = True)
-
-	elif 'mascot' in runType.lower():
-		# Add treeLikelihood key to mascotDict
-		mascotDict['treeLikelihood.' + fileName.replace('.log.txt', '')] = "treeLikelihood"
-
-		# Add indicator keys to mascotDict
-		ind = [x for x in log.columns if 'migration.indicator' in x]
-		names = [x.replace('b_migration.', 'indicators_') for x in log.columns if 'b_migration' in x]
-		names = [re.sub(r'_to_|_and_', '_', x)  for x in names]
-		mascotDict.update(dict(zip(ind, names)))
-
-		# Rename columns
-		log.rename(columns = dict(mascotDict), inplace = True) 
-
-	elif runType.lower() in ['basta']:
-		# Rename columns
-		log.rename(columns = bastaDict, inplace = True)
-
-	else:
-		raise ValueError('{0} is not a correct runType. \
-			It can take the following values: beast1, DTA, mascot or basta'.format(runType))
-
-	return(log)
-
-
-
-
-
-
-
-
-
-
-
-
-def logFileWrangler(fileName, directory, nMatrix, runType, 
+def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 	rootLocation = False, forwards = "false", ess = False):
 	"""
 	Function to retrieve genetic and spatial estimates from Beast Log Files
 		- fileName (dataframe): name of the beast log file  
+		- directory (str): directory from which to read input files
 		- nMatrix (int): number of the spatial coupling matrix
 		- runType (str): type of beast run (beast1, dta, mascot, basta)
-		- directory (str): directory from which to read input files
+		- regionDict (dict): dictionary whose items are integers and values are the corresponding 
+		location strings 
 		- rootLocation (bool): if True, the rootLocation probabilities are analyzed
 		- forwards (str): 
 			argument for mascot beast files only
-			if "true", then 
-			if "false", then
-			if "all", then 
-		- ESS (bool): if True, compute ESS for all parameters (depend on the type of beast run) 
+			if "true", then backwards-in-time migration rates are converted into forwards-in-time migration time 
+			if "false", then migration rates are not converted 
+			if "all", then both backwards-in-time and forwards-in-time migration rates are analyzed
+		- ess (bool): if True, compute ESS for all parameters (depend on the type of beast run) 
 			in the Beast log file 
 
 	It returns a dataframe with all genetic and spatial parameters of interest as lines 
@@ -136,8 +71,6 @@ def logFileWrangler(fileName, directory, nMatrix, runType,
 		- nSeq: sample size
 		- protocol: sampling protocol
 		- matrix: number of the spatial coupling matrix 
-
-
 	"""
 	print(fileName)
 
@@ -241,12 +174,20 @@ def logFileWrangler(fileName, directory, nMatrix, runType,
 
 		if 'indicators' in x:
 			if ess:
-				essRates = results[['ESS', 'parameter']].copy()
-				essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
+				# essRates = results[['ESS', 'parameter']].copy()
+				# essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
+
+				essRates = results.loc[results.parameter.str.match('rates_'), ['ESS', 'parameter']]            
+				if runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"]:
+					essRates.parameter.replace('rates_', 'forwards_', regex=True, inplace=True)
+				elif 'mascot' in runtype.lower(): 
+					essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
+
+
 				essRates['parameter'] = 'bssvs_' + essRates['parameter'].astype(str)
-				bssvsResults = bssvsStatistics(log, nRegions, symmetric, forwards, essRates)
+				bssvsResults = bssvsStatistics(log, nRegions, symmetric, runType, forwards, essRates)
 			else:
-				bssvsResults = bssvsStatistics(log, nRegions, symmetric, forwards)
+				bssvsResults = bssvsStatistics(log, nRegions, symmetric, runType, forwards)
 
 			results = pd.concat([results, bssvsResults], sort = False, ignore_index = True) 
 			break
@@ -255,12 +196,10 @@ def logFileWrangler(fileName, directory, nMatrix, runType,
 	# Add root location if wanted
 	##############################################
 	if rootLocation:
-		regionDict = None
-		
-		if runType.lower() == "basta":
-			regionDict = dict(zip(range(nRegions), sorted(regions)))
-			if not logRootLocation:
-				logRootLocation = log
+		# if runType.lower() == "basta":
+		# 	regionDict = dict(zip(range(nRegions), sorted(regions)))
+		# 	if not logRootLocation:
+		# 		logRootLocation = log
 
 		rootResults = rootLocationAnalysis(fileName, directory, runType, regions, 
 			logRootLocation, regionDict)
@@ -278,8 +217,6 @@ def logFileWrangler(fileName, directory, nMatrix, runType,
 	results['matrix'] = nMatrix
 	results['model'] = runType
 
-	print("Done")
-
 	return(results)
 
 
@@ -291,13 +228,121 @@ def logFileWrangler(fileName, directory, nMatrix, runType,
 
 
 
-def bssvsStatistics(log, nRegions, symmetric, forwards = "false", 
+def renameColumns(log, runType, fileName):
+	"""
+	Function that renames the columns and slice the beast log file according to
+	the type of beast model.
+	Arguments :
+		- log (dataframe): log file corresponding to the beast .log.txt file without the burnin
+		- runType (string): type of beast run
+		For each runType, a specific dictionary is called from the beastLogDictionaries module
+			"beast1" or "DTA" uses beast1Dict
+			"mascot" used mascotDict
+			"basta" uses bastaDict
+		- fileName (str): name of the file
+
+	It returns the same log file (values are not modified) with renamed columns.
+	In the case of beast1 models, four columns are dropped. 
+		- default.meanRate is the same as default.clock.rate for strict molecular clock models
+		- regions.meanRate is the same as regions.clock.rate for strict molecular clock models
+		- default.branchRates and regions.branchRates are equal to 0
+	"""
+	if runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"]:
+		# Drop specific columns
+		log.drop(columns = ['default.meanRate', 
+			'regions.meanRate', 
+			'default.branchRates',
+			'regions.branchRates',
+			'kappa.1', 
+			'frequencies1.1', 
+			'frequencies2.1', 
+			'frequencies3.1', 
+			'frequencies4.1'], 
+			inplace = True,
+			errors='ignore')
+
+		# Rename columns
+		log.rename(columns = beast1Dict, inplace = True)
+
+	elif 'mascot' in runType.lower():
+		# Add treeLikelihood key to mascotDict
+		mascotDict['treeLikelihood.' + fileName.replace('.log.txt', '')] = "treeLikelihood"
+
+		# Add indicator keys to mascotDict
+		ind = [x for x in log.columns if 'migration.indicator' in x]
+		names = [x.replace('b_migration.', 'indicators_') for x in log.columns if 'b_migration' in x]
+		names = [re.sub(r'_to_|_and_', '_', x)  for x in names]
+		mascotDict.update(dict(zip(ind, names)))
+
+		# Rename columns
+		log.rename(columns = dict(mascotDict), inplace = True) 
+
+	elif runType.lower() in ['basta']:
+		# Rename columns
+		log.rename(columns = bastaDict, inplace = True)
+
+	else:
+		raise ValueError('{0} is not a correct runType. \
+			It can take the following values: beast1, DTA, mascot or basta'.format(runType))
+
+	return(log)
+
+
+
+
+
+
+
+
+
+
+def forwardsRates(log):
+	"""
+	If a beast log file corresponds to a Mascot run, migration rates are backwards in time.
+	To compare them with forwards in time migration rates, they can be converted into 
+	forwards in time migration rates.
+
+	forwards_{i,j} = backwards_{j,i} * Ne_{j} / Ne_{i}
+
+	It returns the dataframe with supplementary columns with the suffix forwards_.
+	"""
+	
+	for col in log.columns:
+		if 'rates_' in col:
+			j = re.match(r'^rates_(.*)_.*$', col).group(1)
+			i = re.match(r'^.*_([^_]*)$', col).group(1)
+			log['forwards_' + i + "_" + j] = log[col] * log['Ne_' + j] / log['Ne_' + i]
+
+	return(log)
+
+
+
+
+
+
+
+
+
+
+def bssvsStatistics(log, nRegions, symmetric, runType, forwards = "false", 
 	essRates = pd.DataFrame()):
 	"""
 	If a beast log file corresponds to a BSSVS run, statistics (mean, max, min, quantiles, 
-	hpd interval, std) are computed on migration rates when the indicator variable is equal to 1.
+	95%-hpd interval, std) are computed on migration rates when the indicator variable is equal to 1.
 	Bayes Factor (BF) supporting the migration rate is computed as well.
+
+	Arguments:
+		- log (pd.DataFrame): BEAST log file
+		- nRegions (int): number of unique locations present in the log file
+		- symmetric (bool): is the migration matrix symmetric or asymmetric 
+		- runType (str): BEAST model 'dta', 'mascot_v*', 'basta'
+		- forwards (str): argument for mascot beast files only
+			if "true", then backwards-in-time migration rates are converted into forwards-in-time migration time 
+			if "false", then migration rates are not converted 
+			if "all", then both backwards-in-time and forwards-in-time migration rates are analyzed
+		- essRates (pd.DataFrame): dataframe containing the ESS values of the raw migration rates
 	
+	Description of the output:
 		- BF is computed using the bayesFactorRates function in the mathFunctions module. 
 		It is directly based on Lemey et al., 2009.
 	
@@ -319,13 +364,13 @@ def bssvsStatistics(log, nRegions, symmetric, forwards = "false",
 	# rates*indicators dataframe
 	# Convert the dataframe in a long format with 
 	# one columns with indicators and the other with rates
-	if forwards.lower() in "all":
+	if forwards.lower() == "all":
 		merged = longFormat(log, ['forwards', 'rates'])
 	
-	elif forwards.lower() in "true":
+	elif forwards.lower() == "true":
 		merged = longFormat(log, 'forwards')
 
-	else:
+	elif forwards.lower() == "false" and runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"] :
 		merged = longFormat(log, 'rates')
 
 	# Filter the dataframe on the indicator to keep only 
@@ -373,14 +418,14 @@ def bssvsStatistics(log, nRegions, symmetric, forwards = "false",
 
 def longFormat(log, prefix):
 	"""
-	Part of the bssvsStatistics function which converts the log dataframe into a long format.
+	Part of the bssvsStatistics function which converts the log dataframe (wide format) into a long format.
 		- log (pandas dataframe) : beast log file with standardized column names
 		- prefix (list of strings) : prefix of the columns to be multiplied with its corresponding 
 		indicator variable
 
 	It returns the dataframe in long format.
 	"""
-	prefix = ['forwards', 'rates']
+	#prefix = ['forwards', 'rates']
 	if type(prefix) == str:
 		prefix = [prefix]
 
@@ -438,16 +483,23 @@ def longFormat(log, prefix):
 
 
 def rootLocationAnalysis(fileName, directory, model, regions, 
-	logFile = None, regionDict = None):
+	logFile, regionDict):
 	"""
+	Function which computes the Kullback-Leibler divergence of the root location. 
+	For DTA runs, the function uses the column 'regions' of the BEAST log file.
+	For MASCOT runs, the function uses the corresponding mcc tree file.
 
+	Arguments: 
+		- fileName (str): name of the BEAST log file currently analyzed
+		- directory (str): directory where to find the BEAST log file and the mcc tree
+		- model (str): type of beast run (beast1, dta, mascot, basta)
+		- regions (list): list of regions represented in the run under analysis 
+		- logFile (pd.DataFrame): dataframe of the root location, it is passed only for 'dta' and 'beast1' runs
+		- regionDict (dict): dictionary whose items are integers and values are the corresponding 
+		location strings 
+
+	It returns the KL divergence in a pd.DataFrame format. 
 	"""
-	# All regions
-	if all(elem in allEcoregions for elem in regions):
-		allRegions = allEcoregions.copy()
-	if all(elem in all3demes for elem in regions):
-		allRegions = all3demes.copy()
-
 	# According to the model implemented, compute root location
 	# probabilities and KL divergence
 	if model.lower() in ["beast1"]:
@@ -544,6 +596,7 @@ def rootLocationAnalysis(fileName, directory, model, regions,
 					ignore_index = True)
 
 	# Add locations that were not sampled
+	allRegions = list(regionDict.values())
 	if out.shape[0] != len(allRegions):
 		for x in allRegions:
 			if x not in list(out.parameter):
@@ -557,31 +610,3 @@ def rootLocationAnalysis(fileName, directory, model, regions,
 	out = out.append(pd.DataFrame({"parameter": ["KL"], "value": [kl]}), ignore_index = True)
 
 	return(out)
-
-
-
-
-
-
-
-
-
-
-def forwardsRates(log):
-	"""
-	If a beast log file corresponds to a Mascot run, migration rates are backwards in time.
-	To compare them with forwards in time migration rates, they can be converted into 
-	forwards in time migration rates.
-
-	forwards_{i,j} = backwards_{j,i} * Ne_{j} / Ne_{i}
-
-	It returns the dataframe with supplementary columns with the suffix forwards_.
-	"""
-	
-	for col in log.columns:
-		if 'rates_' in col:
-			j = re.match(r'^rates_(.*)_.*$', col).group(1)
-			i = re.match(r'^.*_([^_]*)$', col).group(1)
-			log['forwards_' + i + "_" + j] = log[col] * log['Ne_' + j] / log['Ne_' + i]
-
-	return(log)
