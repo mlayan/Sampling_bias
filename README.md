@@ -12,6 +12,7 @@ Passive surveillance systems are suspected to report infectious disease cases in
 ### Simulations
 Rabies epidemics were simulated using a discrete-time spatially-explicit stochastic model. Dog mobility was parametrized using a radiation model fitted to human population data in Morocco. Sequence evolution follows a simple HKY model without considering selection processes nor sequence heterogeneity.
 All the simulation steps are gathered in the `epidemics` directory with the human population data, the inferred mobility matrix, the Moroccan shapefiles and the fasta sequences of a real RABV in `inputfiles`.
+Simulated transmission chains, fasta files and traits files (location of the sampled sequences) are generated and stored in `mig1/simulation1/files`.
 
 ### XML generation
 XML files are generated using an in-house python module which is based on the `lxml`python module and tailored BEAST XML template files.
@@ -21,4 +22,7 @@ Default operators and priors specific to each model are implemented.
 
 ### Analysis of BEAST outputs and simulated epidemics
 BEAST log files from the same BEAST model are summarized into a single tab-delimited file. This file stores basic summary statistics of inferred parameters (mean, median, 95%-CI, 95%-HPD, standard deviation, minimum, maximum) as well as the ESS computed using BEAST2 function. For MASCOT files, backwards-in-time migration rates are converted into forwards-in-time migration rates. Since BSSVS is implemented on migration rates, the Bayes factor is calculated using the corresponding indicator variables. Finally, root location probabilities is retrieved either from log files (DTA model) or from mcc trees (MASCOT model).  
-In parallel, migration rates and root location of the MRCA of the sampled tips are calculated from simulated transmission chains and collated in tab-delimited files. Newick trees for each sample are also extracted from simulated transmission chains.
+In parallel, migration rates and root location of the MRCA of the sampled tips are calculated from simulated transmission chains and collated in tab-delimited files. Newick trees for each sample are also extracted from simulated transmission chains and stored in the `files` sub-directory.
+BEAST chains with the ESS of the prior, posterior or likelihood lower than 200 are discarded.
+Inferred and simulated parameters are compared using majorly linear regressions.
+Finally, the tree topology of the mcc trees and the inferred Newick trees are compared using linear regressions.
