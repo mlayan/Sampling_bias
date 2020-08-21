@@ -75,7 +75,7 @@ with ProcessPoolExecutor() as executor:
 data = pd.concat(results, axis = 0)
 
 # Write the dataframe
-data.to_csv('analyses/migration_events_sim1to10_' + cond + '.txt', 
+data.to_csv('../analyses/migration_events_sim1to10_' + cond + '.txt', 
             index = False, 
             header = True, 
             sep = '\t', 
