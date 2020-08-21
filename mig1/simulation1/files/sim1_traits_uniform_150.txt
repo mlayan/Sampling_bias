@@ -1,151 +1,151 @@
 traits	regions
-2_22396_2012.39071	North Atlantic coast
-3_6335_2008.508197	South Atlantic coast
-2_17252_2011.328767	North Atlantic coast
-1_3609_2003.728767	Eastern Mediterranean coast
-0_3289_1993.917808	Western Mediterranean coast
-0_10434_2016.032787	Western Mediterranean coast
-3_1591_2005.452055	South Atlantic coast
-0_5220_1996.117486	Western Mediterranean coast
-2_37634_2015.539726	North Atlantic coast
-2_26347_2013.208219	North Atlantic coast
-2_27191_2013.421918	North Atlantic coast
-1_7707_2007.520548	Eastern Mediterranean coast
-3_8207_2012.464481	South Atlantic coast
-2_20956_2012.051913	North Atlantic coast
-3_8859_2014.084932	South Atlantic coast
-2_49037_2017.70137	North Atlantic coast
-3_5708_2007.882192	South Atlantic coast
-0_265_1990.079452	Western Mediterranean coast
-2_2369_2006.320548	North Atlantic coast
-2_42225_2016.42623	North Atlantic coast
-2_40348_2016.259563	North Atlantic coast
-2_52205_2018.673973	North Atlantic coast
-2_49548_2017.879452	North Atlantic coast
-2_24614_2012.855191	North Atlantic coast
-2_15678_2010.709589	North Atlantic coast
-2_6137_2007.841096	North Atlantic coast
-2_38786_2015.849315	North Atlantic coast
-3_3356_2006.534247	South Atlantic coast
-2_17525_2011.29863	North Atlantic coast
-2_30785_2014.084932	North Atlantic coast
-2_42746_2016.551913	North Atlantic coast
-3_2746_2006.120548	South Atlantic coast
-2_7725_2008.215847	North Atlantic coast
-2_50301_2018.016438	North Atlantic coast
-3_2387_2005.923288	South Atlantic coast
-2_52679_2018.835616	North Atlantic coast
-2_6049_2007.778082	North Atlantic coast
-2_28013_2013.553425	North Atlantic coast
-2_12971_2009.682192	North Atlantic coast
-0_5797_1996.762295	Western Mediterranean coast
-2_16235_2010.931507	North Atlantic coast
-3_2576_2006.071233	South Atlantic coast
-1_6595_2005.986301	Eastern Mediterranean coast
-2_39033_2015.906849	North Atlantic coast
-0_7741_2000.439891	Western Mediterranean coast
-2_23063_2012.47541	North Atlantic coast
-2_27016_2013.350685	North Atlantic coast
-2_7120_2008.114754	North Atlantic coast
-3_1314_2005.260274	South Atlantic coast
-2_30158_2014.024658	North Atlantic coast
-0_6665_1998.216438	Western Mediterranean coast
-1_4192_2004.18306	Eastern Mediterranean coast
-2_26486_2013.210959	North Atlantic coast
-2_18526_2011.545205	North Atlantic coast
-1_6299_2005.676712	Eastern Mediterranean coast
-2_33749_2014.6	North Atlantic coast
-2_45381_2017.063014	North Atlantic coast
-2_12226_2009.421918	North Atlantic coast
-2_28657_2013.687671	North Atlantic coast
-1_8638_2008.73224	Eastern Mediterranean coast
-2_2440_2006.268493	North Atlantic coast
-1_10756_2012.469945	Eastern Mediterranean coast
-1_4154_2004.081967	Eastern Mediterranean coast
-2_15187_2010.493151	North Atlantic coast
-2_15086_2010.484932	North Atlantic coast
-0_8458_2002.071233	Western Mediterranean coast
-1_2834_2003.29863	Eastern Mediterranean coast
-0_7358_1999.673973	Western Mediterranean coast
-3_449_2004.065574	South Atlantic coast
-2_49042_2017.69863	North Atlantic coast
-2_193_2003.736986	North Atlantic coast
-2_3677_2007.068493	North Atlantic coast
-2_16947_2011.131507	North Atlantic coast
-2_12010_2009.353425	North Atlantic coast
-2_21693_2012.185792	North Atlantic coast
-2_2346_2006.350685	North Atlantic coast
-2_24587_2012.814208	North Atlantic coast
-2_50921_2018.158904	North Atlantic coast
-2_25991_2013.161644	North Atlantic coast
-2_25920_2013.243836	North Atlantic coast
-1_4368_2004.311475	Eastern Mediterranean coast
-2_44605_2016.907104	North Atlantic coast
-2_14973_2010.487671	North Atlantic coast
-2_11752_2009.208219	North Atlantic coast
-2_45603_2017.10411	North Atlantic coast
-2_41329_2016.434426	North Atlantic coast
-2_40564_2016.224044	North Atlantic coast
-2_4495_2007.471233	North Atlantic coast
-2_11725_2009.252055	North Atlantic coast
-3_904_2004.912568	South Atlantic coast
-2_3179_2006.863014	North Atlantic coast
-0_2152_1992.385246	Western Mediterranean coast
-1_11484_2016.945355	Eastern Mediterranean coast
-2_21812_2012.314208	North Atlantic coast
-1_2915_2003.29863	Eastern Mediterranean coast
-2_24404_2012.844262	North Atlantic coast
-0_5973_1996.980874	Western Mediterranean coast
-2_29555_2013.849315	North Atlantic coast
-2_10813_2009.054795	North Atlantic coast
-2_23888_2012.672131	North Atlantic coast
-0_393_1990.413699	Western Mediterranean coast
-3_4559_2007.306849	South Atlantic coast
-2_44885_2016.967213	North Atlantic coast
-3_8440_2013.134247	South Atlantic coast
-2_17787_2011.421918	North Atlantic coast
-0_7962_2000.721311	Western Mediterranean coast
-3_4215_2007.161644	South Atlantic coast
-2_52255_2018.665753	North Atlantic coast
-2_14868_2010.394521	North Atlantic coast
-2_43344_2016.669399	North Atlantic coast
-1_758_2001.076712	Eastern Mediterranean coast
-2_19514_2011.745205	North Atlantic coast
-2_43054_2016.614754	North Atlantic coast
-0_1622_1991.843836	Western Mediterranean coast
-3_1626_2005.50411	South Atlantic coast
-3_1485_2005.372603	South Atlantic coast
-2_36931_2015.342466	North Atlantic coast
-1_2117_2002.745205	Eastern Mediterranean coast
-3_6247_2008.379781	South Atlantic coast
-2_39634_2016.008197	North Atlantic coast
-3_2930_2006.235616	South Atlantic coast
-2_11683_2009.167123	North Atlantic coast
-1_7223_2006.687671	Eastern Mediterranean coast
-3_1837_2005.6	South Atlantic coast
-2_28331_2013.676712	North Atlantic coast
-3_5560_2007.854795	South Atlantic coast
-4_344_2006.156164	Northern Atlas
-1_6628_2006.019178	Eastern Mediterranean coast
-2_38320_2015.693151	North Atlantic coast
-2_48257_2017.547945	North Atlantic coast
-2_9457_2008.639344	North Atlantic coast
-2_7965_2008.327869	North Atlantic coast
-2_38627_2015.772603	North Atlantic coast
-2_34175_2014.668493	North Atlantic coast
-2_25375_2012.997268	North Atlantic coast
-2_30843_2014.10411	North Atlantic coast
-2_2214_2006.167123	North Atlantic coast
-2_8212_2008.36612	North Atlantic coast
-0_3532_1994.208219	Western Mediterranean coast
-2_27679_2013.50137	North Atlantic coast
-2_34072_2014.646575	North Atlantic coast
-2_38922_2015.871233	North Atlantic coast
-1_2614_2003.109589	Eastern Mediterranean coast
-2_45526_2017.106849	North Atlantic coast
-1_935_2001.30411	Eastern Mediterranean coast
-2_22444_2012.368852	North Atlantic coast
-1_749_2001.126027	Eastern Mediterranean coast
-2_51777_2018.487671	North Atlantic coast
-0_1007_1991.271233	Western Mediterranean coast
-2_27445_2013.457534	North Atlantic coast
+3_9576_2011.726027	Region4
+4_19895_2010.413699	Region5
+4_19133_2008.918033	Region5
+4_19954_2010.526027	Region5
+3_7449_2007.386301	Region4
+2_19037_2007.150685	Region3
+2_18469_2006.734247	Region3
+4_16602_2006.756164	Region5
+3_7043_2006.50137	Region4
+2_17922_2006.473973	Region3
+2_17792_2006.424658	Region3
+2_17724_2006.413699	Region3
+2_20405_2008.131148	Region3
+2_17138_2005.923288	Region3
+4_15154_2005.868493	Region5
+2_16914_2005.739726	Region3
+2_16902_2005.736986	Region3
+4_14916_2005.715068	Region5
+3_6433_2005.717808	Region4
+4_14880_2005.641096	Region5
+5_931_2005.490411	Region6
+4_18444_2008.20765	Region5
+2_16684_2005.405479	Region3
+4_14348_2005.227397	Region5
+2_16443_2005.147945	Region3
+3_5832_2005.010959	Region4
+2_16224_2004.997268	Region3
+2_16044_2004.863388	Region3
+1_7993_2004.786885	Region2
+3_5524_2004.680328	Region4
+2_9433_2001.553425	Region3
+0_9906_1998.183562	Region1
+2_13558_2003.246575	Region3
+3_6877_2006.271233	Region4
+2_2487_1997.372603	Region3
+3_4372_2003.791781	Region4
+4_1582_1997.09863	Region5
+2_13754_2003.386301	Region3
+2_1814_1996.803279	Region3
+1_6258_1996.961749	Region2
+2_14335_2003.632877	Region3
+1_6141_1996.86612	Region2
+3_2999_2002.20274	Region4
+2_3283_1997.80274	Region3
+0_9701_1997.832877	Region1
+2_18648_2006.838356	Region3
+0_7290_1996.068306	Region1
+1_5212_1996.265027	Region2
+1_5006_1996.092896	Region2
+1_657_1992.131148	Region2
+4_8492_2001.753425	Region5
+0_7047_1995.830137	Region1
+4_3966_1999.876712	Region5
+0_2434_1992.655738	Region1
+4_10906_2002.871233	Region5
+3_5127_2004.393443	Region4
+0_5379_1994.90411	Region1
+3_4310_2003.632877	Region4
+0_3154_1993.161644	Region1
+2_10589_2002.065753	Region3
+1_4112_1995.539726	Region2
+1_941_1992.453552	Region2
+0_2346_1992.584699	Region1
+3_5571_2004.781421	Region4
+0_6037_1995.169863	Region1
+4_9537_2002.232877	Region5
+4_10338_2002.583562	Region5
+2_9187_2001.449315	Region3
+5_1391_2007.035616	Region6
+0_1120_1991.575342	Region1
+1_6110_1996.879781	Region2
+0_6653_1995.641096	Region1
+2_7760_2000.628415	Region3
+4_8721_2001.865753	Region5
+4_271_1995.70411	Region5
+4_14664_2005.539726	Region5
+0_812_1991.221918	Region1
+1_2278_1993.742466	Region2
+2_711_1995.356164	Region3
+1_623_1992.128415	Region2
+1_7167_1998.832877	Region2
+4_15238_2005.863014	Region5
+4_15289_2005.882192	Region5
+2_340_1994.79726	Region3
+3_5771_2004.953552	Region4
+1_1453_1992.959016	Region2
+2_989_1995.863014	Region3
+4_7611_2001.279452	Region5
+2_288_1994.630137	Region3
+1_8170_2005.665753	Region2
+0_5484_1994.969863	Region1
+1_9825_2010.016438	Region2
+0_5578_1995.054795	Region1
+4_11006_2002.936986	Region5
+2_196_1994.378082	Region3
+4_5497_2000.428962	Region5
+2_427_1995.068493	Region3
+2_1576_1996.617486	Region3
+2_1722_1996.784153	Region3
+0_7328_1996.02459	Region1
+1_1273_1992.765027	Region2
+2_15419_2004.344262	Region3
+0_10266_1998.673973	Region1
+1_9002_2006.964384	Region2
+1_7639_2001.816438	Region2
+2_2540_1997.432877	Region3
+4_14139_2005.073973	Region5
+3_1280_1999.457534	Region4
+2_16919_2005.728767	Region3
+2_8625_2001.106849	Region3
+2_6761_1999.865753	Region3
+4_2453_1998.758904	Region5
+4_7101_2000.997268	Region5
+4_3962_1999.90411	Region5
+0_9086_1997.224658	Region1
+2_20667_2008.423497	Region3
+3_1676_1999.978082	Region4
+4_4880_2000.243169	Region5
+4_5179_2000.330601	Region5
+4_3116_1999.427397	Region5
+4_5763_2000.590164	Region5
+2_14874_2004.02459	Region3
+2_8190_2000.885246	Region3
+4_6876_2000.909836	Region5
+2_10265_2001.923288	Region3
+2_8280_2000.931694	Region3
+2_8544_2001.172603	Region3
+2_8378_2001.038356	Region3
+2_1104_1995.945205	Region3
+3_4020_2003.416438	Region4
+2_9776_2001.673973	Region3
+4_8886_2001.964384	Region5
+2_3808_1998.205479	Region3
+1_7752_2002.147945	Region2
+4_9562_2002.156164	Region5
+3_3008_2002.282192	Region4
+2_11311_2002.265753	Region3
+4_9790_2002.257534	Region5
+2_17774_2006.416438	Region3
+0_10682_1999.646575	Region1
+2_22079_2009.454795	Region3
+2_12310_2002.70411	Region3
+4_10650_2002.731507	Region5
+4_12591_2003.857534	Region5
+3_3597_2002.956164	Region4
+0_9778_1997.969863	Region1
+3_7555_2007.542466	Region4
+2_13938_2003.424658	Region3
+2_14945_2003.983562	Region3
+2_15350_2004.281421	Region3
