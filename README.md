@@ -27,3 +27,7 @@ In parallel, migration rates and root location of the MRCA of the sampled tips a
 BEAST chains with the ESS of the prior, posterior or likelihood lower than 200 are discarded.
 Inferred and simulated parameters are compared using majorly linear regressions.
 Finally, the tree topology of the mcc trees and the inferred Newick trees are compared using linear regressions.
+
+### MASCOT runs
+In `test_mascot`, XML files, MCC and Newick trees of MASCOT runs are presented. `M1` corresponds to the first tests on simulations using an arbitrary sparse migration matrix across 7 demes. `3demes` corresponds to the latest tests on simulations of epidemics circulating across 3 demes whose migration matrix is based on the radiation model.   
+All sampling protocols are represented for the first simulation of each population setting.
