@@ -47,8 +47,7 @@ all = c('uniform_150', 'biased_2.5_150', 'biased_5_150', 'biased_10_150', 'biase
 #             "NorthAtlanticcoast", "SouthAtlanticcoast", "NorthernAtlas", 
 #             'SouthernAtlas', "AntiAtlas")
 
-regions = c("Region1", "Region2", "Region3", "Region4", "Region5", 
-            'Region6', "Region7")
+regions = c("Region1", "Region2", "Region3", "Region4", "Region5", 'Region6', "Region7")
 
 #############################################################
 ##  FUNCTIONS
@@ -124,7 +123,7 @@ normalizeRates <- function(param, inputData) {
   ratesDiag <- D %>%
     filter(source != dest, parameter == "migrationRate") %>% 
     group_by(source) %>% 
-    summarise(qdiag = sum(value, na.rm = TRUE)) %>% 
+    summarise(qdiag = sum(value, na.rm = TRUE), .groups = 'drop') %>% 
     right_join(., f, by = c("source" = "source")) %>%
     data.frame()
   ratesDiag$qdiag[is.na(ratesDiag$qdiag)] <- 0
@@ -142,7 +141,7 @@ normalizeRates <- function(param, inputData) {
 #############################################################
 # Regression coefficient
 test_eqn <- function(param, df, stat = 'median', test = "lm"){
-  
+
   # Retrieve parameters
   s <- as.numeric(param[1])  # Sample size
   p <- param[2]             # Protocol
@@ -165,39 +164,49 @@ test_eqn <- function(param, df, stat = 'median', test = "lm"){
       df_sub <- df_sub[df_sub$matrix == ma, ] 
     }
     
-    # Compute regression coefficient
-    if (test == "lm") {
-      if (stat == "median") lModel <- lm(X50 ~ value.y, df_sub)
-      if (stat == "mean") lModel <- lm(mean ~ value.y, df_sub)
-      eq <- substitute(#y == a + b %.% x*","~~
-        r^2~"="~r2, 
-        list(#a = format(unname(coef(m_dta)[1]), digits = 2),
-          #b = format(unname(coef(m_dta)[2]), digits = 2),
-          r2 = format(summary(lModel)$r.squared, digits = 3)))
-      coef = summary(lModel)$r.squared
-      intercept = coef(lModel)[1]
-      slope = coef(lModel)[2] 
-      
-      # Append results to output
-      outTemp <- data.frame(nSeq = s, 
-                            protocol = p,  
-                            model = model,
-                            coef = as.character(as.expression(eq)), 
-                            r = coef, 
-                            slope = slope, 
-                            intercept = intercept) 
-      
+    if (nrow(df_sub) == 0) {
+      outTemp = data.frame(nSeq = s, 
+                           protocol = p,  
+                           model = model,
+                           coef = NA, 
+                           r = NA, 
+                           slope = NA, 
+                           intercept = NA)
       out = bind_rows(out, outTemp)
+    } else {
       
-    } else if (test == "spearman") {
-      if (stat == 'mean') sModel <- cor.test(df_sub$mean, df_sub$value.y, method = "spearman")
-      if (stat == 'median') sModel <- cor.test(df_sub$X50, df_sub$value.y, method = "spearman")
-      eqS <- paste0(model, ": ", rho, ' = ', format(sModel$estimate, digits = 3), 
-                         ", p = ", format(sModel$p.value, digits = 3))
-      pVal = sModel$p.value
-      rho = sModel$estimate
-      
-      # Append results to output
+      # Compute regression coefficient
+      if (test == "lm") {
+        if (stat == "median") lModel <- lm(X50 ~ value.y, df_sub)
+        if (stat == "mean") lModel <- lm(mean ~ value.y, df_sub)
+        eq <- substitute(#y == a + b %.% x*","~~
+          r^2~"="~r2, 
+          list(#a = format(unname(coef(m_dta)[1]), digits = 2),
+            #b = format(unname(coef(m_dta)[2]), digits = 2),
+            r2 = format(summary(lModel)$r.squared, digits = 3)))
+        coef = summary(lModel)$r.squared
+        intercept = coef(lModel)[1]
+        slope = coef(lModel)[2] 
+        
+        # Append results to output
+        outTemp <- data.frame(nSeq = s, 
+                              protocol = p,  
+                              model = model,
+                              coef = paste0(model, ": ", as.character(as.expression(eq))), 
+                              r = coef, 
+                              slope = slope, 
+                              intercept = intercept) 
+        
+        out = bind_rows(out, outTemp)
+      } else if (test == "spearman") {
+        if (stat == 'mean') sModel <- cor.test(df_sub$mean, df_sub$value.y, method = "spearman")
+        if (stat == 'median') sModel <- cor.test(df_sub$X50, df_sub$value.y, method = "spearman")
+        eqS <- paste0(model, ": ", rho, ' = ', format(sModel$estimate, digits = 3), 
+                      ", p = ", format(sModel$p.value, digits = 3))
+        pVal = sModel$p.value
+        rho = sModel$estimate
+        
+        # Append results to output
         out <- data.frame(nSeq = s, 
                           protocol = p,  
                           model = model,
@@ -205,9 +214,10 @@ test_eqn <- function(param, df, stat = 'median', test = "lm"){
                           rho = rho, 
                           p = pVal) 
         
-    
-    } else {
-      warning("The test argument is not valide")
+        
+      } else {
+        warning("The test argument is not valid")
+      }
     }
   }
   
@@ -310,12 +320,12 @@ tests <- function(x) {
   require(dplyr)
   
   seq = as.numeric(x[1])
-  mat = as.numeric(x[2])
-  prot = as.character(x[3])
+  # mat = as.numeric(x[2])
+  prot = as.character(x[2])
   
-  d = filter(topologies_wide, protocol == prot, nSeq == seq, matrix == mat)
-  out = wilcox.test(d$dta, d$mascot, paired = TRUE, alternative = "two.sided")
+  d = filter(topologies_wide, protocol == prot, nSeq == seq) #, matrix == mat)
+  out = wilcox.test(d$dta, d$mascot_v8, paired = TRUE, alternative = "two.sided")
   
-  return(c(seq, mat, prot, out$p.value))
+  return(c(seq, prot, out$p.value))
 }
 
