@@ -1,0 +1,10 @@
+File: sim1_uniform_150.xml seed: 1600249169347 threads: 1
+Loading package Mascot v1.2.2
+Loading package BASTA v3.0.1
+Loading package BEAST v2.6.0
+Loading package BEAST v2.6.0
+  Ignoring ambiguities in tree likelihood.
+  Ignoring character uncertainty in tree likelihood.
+  With 607 unique site patterns.
+  Using rescaling scheme : dynamic
+End likelihood: -24484.651712643237
