@@ -11,14 +11,15 @@ Passive surveillance systems are suspected to report infectious disease cases in
 ## Structure of the project
 ### Simulations
 Rabies epidemics were simulated using a discrete-time spatially-explicit stochastic model. Dog mobility was parametrized using a radiation model fitted to human population data in Morocco. Sequence evolution follows a simple HKY model without considering selection processes nor sequence heterogeneity.
-All the simulation steps are gathered in the `epidemics` directory with the human population data, the inferred mobility matrix, the Moroccan shapefiles and the fasta sequences of a real RABV in `inputfiles`.
-Simulated transmission chains, fasta files and traits files (location of the sampled sequences) are generated and stored in `mig1/simulation1/files`.
+All the simulation steps are gathered in the `epidemics` directory. The human population data, the inferred mobility matrix, the Moroccan shapefiles and the fasta sequences of a real RABV are all located in `inputfiles`.
+Two simulation frameworks were tested: `3demes` corresponds to epidemics across 3 Moroccan demes/regions with 1% of migration rate and `mig1` corresponds to epidemics across 7 Moroccan demes/regions with 1% of migration rate.
+Simulated transmission chains, fasta files and traits files (location of the sampled sequences) are generated and stored in `mig1/simulationX/files` or `3demes/simulationX/files`.
 
 ### XML generation
-XML files are generated using an in-house python module which is based on the `lxml`python module and tailored BEAST XML template files.
-XML files are stored in `mig1/simulation/"BEAST_model"`.
-An HKY prior is used to model sequence evolution. Population dynamics are described by a constant size population in DTA and equal deme sizes in the structured coalescent models. Concerning the migration rates, asymmetric migration matrices are considered and BSSVS is implemented to avoid over-parametrization.  
-Default operators and priors specific to each model are implemented.   
+XML files are generated using an in-house python module which is based on the `lxml` python module and tailored BEAST XML template files. Templates are available in in `python`.
+XML files are stored in `mig1/simulationX/"BEAST_model"` or `3demes/simulationX/"BEAST_model"`.
+An HKY prior is used to model sequence evolution. Population dynamics are described by a constant size population in DTA and equal deme sizes in the structured coalescent models (BASTA and MASCOT). Concerning the migration rates, asymmetric migration matrices are considered and BSSVS is implemented to avoid over-parametrization.  
+Default operators and priors specific to each model are implemented in `dta` and `mascot_v8`. In `dta_v2`and `mascot_v9`, Mascot-like and DTA-like priors for the BSSVS are implemented. Concerning Basta, native priors for the BSSVS are used but E(1) priors are used for migration rates and deme population size, similarly as DTA and Mascot.      
 
 ### Analysis of BEAST outputs and simulated epidemics
 Scripts and intermediary files are located in `analyses`.
