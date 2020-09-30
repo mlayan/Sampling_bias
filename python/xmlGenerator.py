@@ -44,7 +44,8 @@ regexpNS = 'http://exslt.org/regular-expressions'
 def xml_beast1(fileName, regionsFile, logEvery, chainLength, 
 	dirInput = None, dirOutput = None, outputName = None, 
 	prefix = None, fixedTreeFile = None, fixedTreeDirectory= None, 
-	version = 1, substitutionModel = "hky", markovJumps = False):
+	version = 1, substitutionModel = "hky", markovJumps = False, 
+	mascotPriors = False):
 	"""
 	Function to generate based on :
 		- Beast 1 template
@@ -65,6 +66,9 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 		- substitutionModel : either 'jc' or 'hky'
 		- markovJumps (bool) : add elements linked to markov jumps to reconstruct the 
 		number of migration events   
+		- mascotPriors (bool): mascot priors on the indicator variable are used. Instead of
+		having a Poisson prior with mean (n-1), with n the number of sampled locations, we use a 
+		Poisson prior of parameter 1.0 and an offset of 1.0 
 
 	"""
 	##################################################
@@ -118,13 +122,6 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 	parser = etree.XMLParser(remove_blank_text=True)
 	template = etree.parse(templateFile, parser=parser)
 	root = template.getroot()
-
-	# Add comment on the number of sequences and the number of patterns
-	comment = etree.Comment(' ntax=' + str(nseq))
-	root.insert(1, comment) 
-
-	comment = etree.Comment(' ntax=' + str(nseq) + ' nchar=' + str(nChars))
-	root.insert(4, comment)
 
 	# Parameters to modify
 	if not prefix:
@@ -184,13 +181,17 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 	mcmc = root.find("mcmc")
 	mcmc.set('chainLength', str(chainLength))
 	poisson = mcmc.find('joint/prior/poissonPrior')
-	poisson.set('mean', str(nRegions - 1) + '.0')
+	if mascotPriors:
+		poisson.set('mean', '1.0')
+		poisson.set('offset', '1.0')
+	else:
+		poisson.set('mean', str(nRegions - 1) + '.0')
+		poisson.set('offset', '0.0')
 
 	##################################################     
 	## Adapt according to the substitution site model
-	if substitutionModel.lower() == "hky":
-		template = HKYModel(template)
-		
+	# if substitutionModel.lower() == "hky":
+	# 	template = HKYModel(template)
 	if substitutionModel.lower() not in ["jc", "hky"]:
 		raise ValueError("The substitution model passed is not correct. \
 			It is {0} but it should be either jc or hky".format(substitutionModel))
@@ -332,7 +333,10 @@ def addMarkovJumps(template, regions):
 
 
 def HKYModel(template):
-	""""""
+	"""
+	Modification of BEAST 1 XML to include the HKY substitution model instead of the JC model
+	Old function not used with the latest BEAST 1 XML templates.
+	"""
 	# Get the root of the xml file
 	root = template.getroot()
 
@@ -429,8 +433,9 @@ def fixedTreeBeast1(template, tree):
 
 
 def xml_mascot(fileName, regionsFile, logEvery, chainLength, version, 
-		dirInput = None, dirOutput = None, fixedTreeFile = None, fixedTreeDirectory= None, 
-		outputName = None, prefix = None):
+		dirInput = None, dirOutput = None, fixedTreeFile = None, 
+		fixedTreeDirectory= None, 
+		outputName = None, prefix = None, dtaPriors = False):
 	"""
 	Function to generate a MASCOT (Beast2) XML file based on :
 		- Beast 2 template for MASCOT using tailored priors
@@ -441,17 +446,20 @@ def xml_mascot(fileName, regionsFile, logEvery, chainLength, version,
 	template templates, priors and operators. 
 
 	Arguments are: 
-		- fileName: name of the fasta file
-		- regionsFile : name of the regions file
-		- logEvery: step of the MCMC chain
-		- chainLength: length of the MCMC chain
-		- version: version of the mascot template
-		- fixedTreeFile: name of the fixed tree file (in Newick)
-		- fixesTreeDirectory: directory where trees are stored 
-		- directory: directory where input files are and where the output XML file is written
-		- outputName: name of the output XML file
-		- prefix: prefix of the output XML file
-		- templateFile: name of the template file 
+		- fileName (str): name of the fasta file
+		- regionsFile (str): name of the regions file
+		- logEvery (int): step of the MCMC chain
+		- chainLength (int): length of the MCMC chain
+		- version (int): version of the mascot template
+		- fixedTreeFile (str): name of the fixed tree file (in Newick)
+		- fixesTreeDirectory (str): directory where trees are stored 
+		- directory (str): directory where input files are and where the output XML file is written
+		- outputName (str): name of the output XML file
+		- prefix (str): prefix of the output XML file
+		- templateFile (str): name of the template file 
+		- dtaPriors (bool): dta priors on the indicator variable are used. Instead of
+		having a Poisson prior with mean 1 and offset 1, we use a Poisson prior of parameter (n-1), with
+		n the number of sampled locations, and no offset. 
 	"""
 
 	##################################################
@@ -461,24 +469,8 @@ def xml_mascot(fileName, regionsFile, logEvery, chainLength, version,
 	##################################################
 	## Load Files
 	# Directory to read and write files
-	if dirInput:
-		if not re.search(r'/$', dirInput):
-			dirInput += '/'
-
-		if not dirOutput: 
-			dirOutput = dirInput
-		else:
-			if not re.search(r'/$', dirOutput):
-				dirOutput += '/'
-
-	else:
-		dirInput = ""
-
-		if not dirOutput: 
-			dirOutput = ""
-		else:
-			if not re.search(r'/$', dirOutput):
-				dirOutput += '/'
+	dirInput = checkDirectory(dirInput)
+	dirOutput = checkDirectory(dirOutput)
 
 	# Load the region file 
 	regions = pd.read_csv(dirInput + regionsFile, sep ="\t", header = 0)
@@ -535,6 +527,12 @@ def xml_mascot(fileName, regionsFile, logEvery, chainLength, version,
 	else:
 		outputFileName = re.sub(".fasta", "", fileName)
 		outputFileName = prefix + re.sub("_sequences", "", outputFileName)
+
+	poisson = root.find('run/distribution/distribution/prior/distr/parameter')
+	if dtaPriors:
+		poisson.text = str(nRegions - 1) + ".0"
+	else:
+		poisson.text = "1.0"
 
 	##################################################
 	## Loop to create string elements to add
@@ -625,8 +623,9 @@ def xml_mascot(fileName, regionsFile, logEvery, chainLength, version,
 
 
 
-def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = True, 
-	directory = None, popSizesValue = False, outputName = None, prefix = None):
+def xml_basta(fileName, regionsFile, logEvery, chainLength, version,  
+	dirInput = None, dirOutput = None, BSSVS = True, equalDemes = False, 
+	outputName = None, prefix = None):
 	"""
 	Function to generate a BASTA (Beast2) XML file based on :
 		- Beast 2 template for BASTA
@@ -640,7 +639,7 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 		- chainLength: length of the MCMC chain
 		- BSSVS: implementation of BSSVS
 		- directory: directory where input files are and where the output XML file is written
-		- popSizesValue: if set to True for asymmetric matrices, only one parameter is estimated for the effective population size 
+		- equalDemes: if set to True for asymmetric matrices, only one parameter is estimated for the effective population size 
 		- outputName: name of the output XML file
 		- prefix: prefix of the output XML file
 	"""
@@ -651,20 +650,16 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 	##################################################
 	## Load Files
 	# Directory to read and write files
-	if directory:
-		if not re.search(r'/$', directory):
-			directory += "/"
-	else:
-		directory = ""
+	dirInput = checkDirectory(dirInput)
+	dirOutput = checkDirectory(dirOutput)
 
 	# Load the region file 
-	regions = pd.read_csv(directory + regionsFile, sep ="\t", header = 0)
+	regions = pd.read_csv(dirInput + regionsFile, sep ="\t", header = 0)
 	nrows = regions.shape[0]
-	ncols = regions.shape[1]
 	nRegions = len(regions["regions"].unique()) # Number of regions
 
 	# Load the fasta file
-	fasta_in = directory + fileName
+	fasta_in = dirInput + fileName
 	record = SeqIO.index(fasta_in, 'fasta')
 	nseq = len(record)
 
@@ -674,10 +669,10 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 	fasta = list()
 	names = list()
 	with open(fasta_in) as in_handle:
-	    for title, seq in SimpleFastaParser(in_handle):
-	        fasta.append(seq)
-	        names.append(title)
-	        count += 1
+		for title, seq in SimpleFastaParser(in_handle):
+			fasta.append(seq)
+			names.append(title)
+			count += 1
 
 	nChars = len(fasta[0])
 
@@ -736,8 +731,7 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 
 	##################################################
 	## Specify the dimension of the migration matrix
-	migDimension = {'popSizes':str(nRegions), 
-	'rateMatrix':str(nRegions*(nRegions-1))}
+	migDimension = {'popSizes': str(nRegions), 'rateMatrix': str(nRegions*(nRegions-1))}
 
 	#     1- In the migration model
 	for mig in template.findall('migrationModelVolz'):
@@ -746,11 +740,8 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 
 		# If BSSVS, add the indicator variables
 		if BSSVS:
-			bssvs = etree.Element("rateMatrixFlags", 
-				spec="BooleanParameter",
-				value="true", 
-				dimension=str(nRegions*(nRegions-1)),
-				id="rateMatrixFlags")
+			bssvs = etree.Element("rateMatrixFlags", spec="BooleanParameter", 
+				value="true", dimension=str(nRegions*(nRegions-1)), id="rateMatrixFlags")
 			mig.append(bssvs)
 
 		for param in mig.getchildren():
@@ -759,7 +750,6 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 
 	#    2- In tree initialization
 	for mig in template.findall('run/init/migrationModelVolz'):
-		
 		mig.set('nTypes', str(nRegions)) # Add the number of regions in nTypes attribute
 
 		for param in mig.getchildren():
@@ -767,8 +757,8 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 				param.attrib['dimension'] = migDimension[param.tag]
 
 	# Setting the population sizes to the same value
-	if popSizesValue:
-		for param in template.xpath('run/operator[@id=PopSizeScaler]'):
+	if equalDemes:
+		for param in template.xpath('run/operator[@id="PopSizeScaler"]'):
 			param.set('scaleAll', "True")
 
 	##################################################
@@ -778,8 +768,7 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 
 		# Parameter priors
 		for n in template.xpath('input[@spec="CompoundDistribution"]'):
-			dist = etree.Element("distribution", 
-				spec='beast.math.distributions.Prior')
+			dist = etree.Element("distribution", spec='beast.math.distributions.Prior')
 			x = etree.Element("x", spec='Sum', arg='@rateMatrixFlags')
 			distr = etree.Element("distr", spec='Poisson')
 			distr.set('lambda', str(nRegions-1))
@@ -801,10 +790,6 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 				id='bitFlipOperator', parameter='@rateMatrixFlags', weight="1")
 			parent = n.getparent()
 			parent.insert(parent.index(n)+1, operator)
-
-		# Log BSSVS indicator variables
-		#for n in template.xpath('run/logger[re:match(@fileName, "[a-z]*\.log\.txt")]', namespaces={'re':regexpNS}):
-		#	n.append(etree.Element("log", idref="rateMatrixFlags"))
 
 	##################################################
 	# Change chainLength and storeEvery attibutes of run node
@@ -828,11 +813,12 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version, BSSVS = Tru
 	# Write file
 	if not prefix:
 		prefix = ""
-	template.write(directory + prefix + outputFileName + ".xml", encoding="UTF-8", 
-		standalone="yes", pretty_print=True, xml_declaration=True)
+
+	template.write(dirOutput + prefix + outputFileName + ".xml", 
+		encoding="UTF-8", standalone="yes", pretty_print=True, xml_declaration=True)
 
 	# Write bash file
-	bash_xml(outputFileName, directory, logEvery, beastVersion = 2)
+	bash_xml(outputFileName, dirOutput, logEvery, beastVersion = 2)
 
 
 

@@ -764,7 +764,8 @@ def d_associationIndex(tree, chars):
 
 
 
-def migrationEffectiveness(fileName, directory, matrix):
+def migrationEffectiveness(fileName, directory, matrix, 
+	regionDic):
 	"""
 
 	"""

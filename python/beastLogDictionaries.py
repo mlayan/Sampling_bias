@@ -310,8 +310,8 @@ mascotDict = {
 	'prior': 'prior',
 	'likelihood':'likelihood',
 	'treeHeight':'treeHeight',
-	'clockRate':'clockRate',
-	'kappa':'kappa',
+	# 'clockRate':'clockRate',
+	# 'kappa':'kappa',
 	'freqParameter.1':'freqA',
 	'freqParameter.2':'freqC',
 	'freqParameter.3':'freqG',
@@ -383,15 +383,19 @@ mascotDict = {
 
 
 # Basta
+bastaDictElement = {
+	'migModel.popSize_':'Ne_',
+	'migModel.rateMatrix_':'rates_',
+	'migModel.rateMatrixFlag_':'indicators_',
+	'treePrior.Count':'nMigration_'
+}
+
 bastaDict = {
 	'Sample':'state',
-	'posterior':'posterior',
+	'parameterPriors':'prior', 
+	'treeLikelihood1':'treeLikelihood',
 	'treePrior.treePrior':'treePrior',
-	'mutationRate':'clockRate',
-	'hky.kappa':'kappa',
-	'migModel.popSize_region1': 'Ne_region1',
 	'treePrior.rootColor':'rootLocation',
-	'migModel.rateMatrix_region1_region2':'rates_region1_region2',
-	'migModel.rateMatrixFlag_0_1':'indicators_region1_region2',
-	'treePrior.Count0to1':'nMigration_region1_region2'
+	'mutationRate':'clockRate',
+	'hky.kappa':'kappa'
 }

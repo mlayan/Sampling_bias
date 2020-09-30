@@ -22,6 +22,7 @@ import dendropy
 from mathFunctions import *
 from simulatedTrees import getAncestors
 from handleDirectories import checkDirectory
+from itertools import takewhile
 
 ## Import regions and log files columns dictionaries
 from beastLogDictionaries import * 
@@ -40,7 +41,7 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 		- directory (str): directory from which to read input files
 		- nMatrix (int): number of the spatial coupling matrix
 		- runType (str): type of beast run (beast1, dta, mascot, basta)
-		- regionDict (dict): dictionary whose items are integers and values are the corresponding 
+		- regionDict (dict): dictionary whose keys are integers and values are the corresponding 
 		location strings 
 		- rootLocation (bool): if True, the rootLocation probabilities are analyzed
 		- forwards (str): 
@@ -85,7 +86,14 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 
 	# Remove spaces and rename columns
 	log.columns = log.columns.str.replace(' ', '')
-	log = renameColumns(log, runType, fileName)
+
+	# Get region dictionary for Basta chains
+	bastaRegionDict = None
+	if 'basta' in runType.lower():
+		bastaRegionDict = getBastaRegionDict(fileName, directory)
+
+	# Rename columns
+	log = renameColumns(log, runType, fileName, bastaRegionDict)
 	
 	##############################################
 	# General informations
@@ -130,16 +138,16 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 	# time migration rates  
 	##############################################
 	if forwards.lower() in ["true", "all"]:
-		if "mascot" not in runType.lower():
+		if "mascot" not in runType.lower() and 'basta' not in runType.lower():
 			raise ValueError('Forwards in time migration rates can be computed only for Mascot runs. \
 				The "forwards" argument has not a correct value for a {0} model'.format(runType))
 		else:
 			log = forwardsRates(log)
 
-			if forwards.lower() == "true":
-				cols = [c for c in log.columns if 'rates_' in c]
-				log = log.drop(columns=cols, inplace=True)
-				
+	if forwards.lower() == "true":
+		cols = [c for c in log.columns if 'rates_' in c]
+		log.drop(columns=cols, inplace=True)
+		
 
 	##############################################
 	# Get describe(), the 95% HPD intervals and 
@@ -177,15 +185,15 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 				# essRates = results[['ESS', 'parameter']].copy()
 				# essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
 
-				essRates = results.loc[results.parameter.str.match('rates_'), ['ESS', 'parameter']]            
-				if runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"]:
+				essRates = results.loc[results.parameter.str.match('^rates_|^forwards_'), ['ESS', 'parameter']]            
+				if "dta" in runType.lower():
 					essRates.parameter.replace('rates_', 'forwards_', regex=True, inplace=True)
-				elif 'mascot' in runtype.lower(): 
+				elif 'mascot' in runType.lower(): 
 					essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
-
 
 				essRates['parameter'] = 'bssvs_' + essRates['parameter'].astype(str)
 				bssvsResults = bssvsStatistics(log, nRegions, symmetric, runType, forwards, essRates)
+
 			else:
 				bssvsResults = bssvsStatistics(log, nRegions, symmetric, runType, forwards)
 
@@ -228,7 +236,40 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 
 
 
-def renameColumns(log, runType, fileName):
+def getBastaRegionDict(fileName, directory):
+	"""
+	"""
+	# Read comment lines of Basta Log file
+	with open(directory + fileName, 'r') as commentLines:
+		comments = takewhile(lambda s: s.startswith("#"), commentLines) 
+		comments = list(comments)
+	
+	# Get regions in the correct order from the trait element 
+	# It corresponds to the input data in the xml file
+	for l in comments: 
+		if '<trait id="typeTraitSet"' in l:
+			regionList = re.findall(r"\.[0-9]*=(\w*),", l)
+
+	regions = []
+	for x in regionList:
+		if x not in regions:
+			regions.append(x)
+
+	# Dictionary with keys as integers and values as region names
+	out = dict(zip([str(x) for x in range(len(regions))], regions))
+
+	return(out)
+
+
+
+
+
+
+
+
+
+
+def renameColumns(log, runType, fileName, bastaRegionDict = None):
 	"""
 	Function that renames the columns and slice the beast log file according to
 	the type of beast model.
@@ -247,7 +288,7 @@ def renameColumns(log, runType, fileName):
 		- regions.meanRate is the same as regions.clock.rate for strict molecular clock models
 		- default.branchRates and regions.branchRates are equal to 0
 	"""
-	if runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"]:
+	if 'dta' in runType.lower() :
 		# Drop specific columns
 		log.drop(columns = ['default.meanRate', 
 			'regions.meanRate', 
@@ -277,9 +318,36 @@ def renameColumns(log, runType, fileName):
 		# Rename columns
 		log.rename(columns = dict(mascotDict), inplace = True) 
 
-	elif runType.lower() in ['basta']:
+	elif 'basta' in runType.lower():
+		# Prepare column names for the structured coalescent variables
+		columnNames = []
+		newNames = []
+		for col in log.columns:
+			pattern = re.compile('|'.join(bastaDictElement.keys()))
+			newName= pattern.sub(lambda x: bastaDictElement[x.group()], col)
+			if 'nMigration' in newName:
+				newName = newName.replace('to', '_')
+			if 'likelihood' not in newName:
+				pattern = re.compile('|'.join(bastaRegionDict.keys()))
+				newName = pattern.sub(lambda x: bastaRegionDict[x.group()], newName)
+			if newName != col:
+				newNames.append(newName)
+				columnNames.append(col)
+
+		# Append customed dictionary to static dictionary
+		bastaDict.update( dict(zip(columnNames, newNames)) )
+
 		# Rename columns
 		log.rename(columns = bastaDict, inplace = True)
+
+		# Replace integers by strings in rootLocation 
+		log.rootLocation = log.rootLocation.astype('str').replace(bastaRegionDict)
+		
+		# Modify dtypes of nMigration columns
+		col_str = [x for x in log.columns.tolist() if 'nMigration' in x]
+		log[col_str] = log[col_str].replace('N', '0')
+		typeDict = dict(zip(col_str, ['int']*len(col_str)))
+		log = log.astype(typeDict)
 
 	else:
 		raise ValueError('{0} is not a correct runType. \
@@ -370,7 +438,7 @@ def bssvsStatistics(log, nRegions, symmetric, runType, forwards = "false",
 	elif forwards.lower() == "true":
 		merged = longFormat(log, 'forwards')
 
-	elif forwards.lower() == "false" and runType.lower() in ["beast1", "dta", "markovjumps", "markovjumps_fixedtree"] :
+	elif forwards.lower() == "false" and "dta" in runType.lower():
 		merged = longFormat(log, 'rates')
 
 	# Filter the dataframe on the indicator to keep only 
@@ -438,27 +506,40 @@ def longFormat(log, prefix):
 		data['id'] = data.index
 
 		# Rearrange the dataframe in long format
-		data = data.melt(id_vars = ['id'], 
-			var_name = 'param', 
-			value_name = p)
+		data = data.melt(id_vars = ['id'], var_name = 'param', value_name = p)
 
-		if p == "rates" and len(prefix) > 1:
-			data.param.replace(to_replace = p, 
-				value = 'bssvs_backwards', 
-				inplace = True, 
-				regex = True)
+		if p == "rates":
+			if len(prefix) > 1:
+				data.param.replace(to_replace = p, 
+					value = 'bssvs_backwards', 
+					inplace = True, 
+					regex = True)
+			else:
+				data.param.replace(to_replace = p, 
+					value = 'bssvs_forwards', 
+					inplace = True, 
+					regex = True)
+
+			data['parameter'] = data.param.replace(to_replace='^[a-z\_]*', 
+				value = '', regex = True) 
 			dataP.append(data)
+
 		else:
 			data.param.replace(to_replace = p, 
 				value = 'bssvs_forwards', 
 				inplace = True, 
 				regex = True)
 			data.rename(columns = {'forwards':'rates'}, inplace = True)
+			data['destination'] = data.param.replace(to_replace='^\w*_', 
+														value = '', regex = True)
+			data['source'] = data.param.replace(to_replace='^[a-z\_]*|_\w*$', 
+														value = '', regex = True)
+			data['parameter'] = data.destination + "_" + data.source
+			data.drop(columns=['destination', 'source'], inplace=True)
 			dataP.append(data)
 
+
 	dataP = pd.concat(dataP, sort = False, ignore_index = True)
-	dataP['parameter'] = dataP.param.replace(to_replace='^[a-z\_]*', 
-		value = '', regex = True) 
 
 	# Do the same with the indicator dataframe
 	colsI = [x for x in log.columns if 'indicators_' in x]
@@ -521,7 +602,7 @@ def rootLocationAnalysis(fileName, directory, model, regions,
 		kl = KLRootPrediction(out.value, len(regions), True)
 
 
-	elif model.lower() in ['markovjumps', 'markovjumps_fixedtree', "dta"]:
+	elif "dta" in model.lower():
 
 		# Root location probabilities
 		out = logFile.groupby("rootLocation").size().to_frame()
@@ -574,20 +655,20 @@ def rootLocationAnalysis(fileName, directory, model, regions,
 		out = pd.DataFrame({"parameter": regions, "value": p})
 
 
-	elif model.lower() == 'basta':
-		if not regionDict:
-			raise ValueError("A dictionary for regions needs to be passed for basta outputs")
+	elif 'basta' in model.lower():
+		# if not bastaRegionDict:
+		# 	raise ValueError("A dictionary for regions needs to be passed for basta outputs")
 
 		# Root location probabilities
 		out = logFile.groupby("rootLocation").size().to_frame()
 		out = out.reset_index().rename(columns={"rootLocation":"parameter", 0:"value"})
-		out.replace({"parameter":regionDict}, inplace = True)
 		out.value = out.value / logFile.shape[0]
 
 		# KL divergence 
-		kl = KLRootPrediction(out.value, nRegions, True)
+		kl = KLRootPrediction(out.value, len(regions), True)
 
 	
+
 	# Add sampled locations that were not inferred as root location
 	if out.shape[0] != len(regions):
 		for x in regions:
