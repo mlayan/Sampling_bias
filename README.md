@@ -24,7 +24,7 @@ XML files are stored in `mig1/simulationX/"BEAST_model"` or `3demes/simulationX/
 - `mascot_v9`: equal deme sizes, native deme size prior, native migration rates prior, DTA-like BSSVS priors
 - `basta`: equal deme sizes, E(1) priors for migration rates and deme population size, native BSSVS prior
 An HKY prior is used to model sequence evolution. Population dynamics are described by a constant size population in DTA and equal deme sizes in the structured coalescent models (BASTA and MASCOT). Concerning the migration rates, asymmetric migration matrices are considered and BSSVS is implemented to avoid over-parametrization. Native operators are used in each condition.    
-All models were tested in the `3demes` framework but only `dta` and `mascot_v8` were tested in the `mig1` framework.
+All models were tested in the `3demes` framework but only `dta` was tested in the `mig1` framework.
 
 ### Analysis of BEAST outputs and simulated epidemics
 Scripts and intermediary files are located in `analyses`.
