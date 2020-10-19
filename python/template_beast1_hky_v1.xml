@@ -445,16 +445,19 @@
 			</trait>
 			<joint idref="joint"/>
 
-			<!-- START Ancestral state reconstruction                                    -->
+			<!-- START Ancestral state reconstruction     							-->    
 			<trait name="regions.states" tag="regions">
 				<ancestralTreeLikelihood idref="regions.treeLikelihood"/>
 			</trait>
-
 			<!-- END Ancestral state reconstruction                                      -->
 
+			<!-- START Markov jumps reconstruction
 			<trait name='regions.count' tag='regions.count'>
 				<ancestralTreeLikelihood idref='regions.treeLikelihood' />
 			</trait>
+			<markovJumpsTreeLikelihood idref="regions.treeLikelihood"/>                  -->
+			<!-- END Markov jumps reconstruction                                     -->
+
 		</logTree>
 	</mcmc>
 	
