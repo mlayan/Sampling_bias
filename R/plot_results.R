@@ -100,20 +100,20 @@ normalizeRates <- function(param, inputData) {
   
   # Retrieve parameters
   si <- as.numeric(param[1])
-  s <- param[2]
+  s <- as.numeric(param[2])
   p <- param[3]
-  ma <- param[4]
+  if (length(param) == 4) ma <- param[4]
   
   # Subset the dataframe
-  if (is.na(s)) {
-    D = inputData[inputData$nSim == si & 
+  if (exists("ma")) {
+    D = inputData[inputData$nSim == si &
+                    inputData$nSeq == s &
                     inputData$protocol == p & 
                     inputData$matrix == ma, ]
   } else {
     D = inputData[inputData$nSim == si & 
-                    inputData$nSeq == as.numeric(s) &
-                    inputData$protocol == p & 
-                    inputData$matrix == ma, ]
+                    inputData$nSeq == s &
+                    inputData$protocol == p, ]
   }
   
   # Location frequencies
@@ -173,6 +173,7 @@ test_eqn <- function(param, df, stat = 'median', test = "lm"){
                            slope = NA, 
                            intercept = NA)
       out = bind_rows(out, outTemp)
+      
     } else {
       
       # Compute regression coefficient
@@ -222,6 +223,90 @@ test_eqn <- function(param, df, stat = 'median', test = "lm"){
   }
   
   if (length(param) == 3) out$matrix = ma
+  return(out)
+  
+}
+
+#############################################################
+# Regression coefficient for adjusted BF analyses
+test_eqn_bf <- function(param, df, stat = 'median', test = "lm", threshold = 3){
+  
+  # Retrieve parameters
+  s <- as.numeric(param[1])  # Sample size
+  p <- param[2]             # Protocol
+  
+  # Median 
+  if (stat == "median") {
+    if ("X50" %in% colnames(df)) medianCol = "X50"
+    if ("median" %in% colnames(df)) medianCol = "median"
+  }
+  
+  # Output
+  out = data.frame()
+  
+  for (bf in c("BF", "adjustedBF")) {
+    
+    # Subset dataframe 
+    df_sub = df[df$nSeq == s & df$protocol == p & df[[bf]] >= threshold, ]
+    
+    if (nrow(df_sub) == 0) {
+      outTemp = data.frame(nSeq = s, 
+                           protocol = p,  
+                           BFtype = bf,
+                           coef = NA, 
+                           r = NA, 
+                           slope = NA, 
+                           intercept = NA)
+      out = bind_rows(out, outTemp)
+      
+    } else {
+      
+      # Compute regression coefficient
+      if (test == "lm") {
+        if (stat == "median") lModel <- lm(df_sub[[medianCol]] ~ df_sub$value)
+        if (stat == "mean") lModel <- lm(mean ~ value, df_sub)
+        eq <- substitute(#y == a + b %.% x*","~~
+          r^2~"="~r2, 
+          list(#a = format(unname(coef(m_dta)[1]), digits = 2),
+            #b = format(unname(coef(m_dta)[2]), digits = 2),
+            r2 = format(summary(lModel)$r.squared, digits = 3)))
+        coef = summary(lModel)$r.squared
+        intercept = coef(lModel)[1]
+        slope = coef(lModel)[2] 
+        
+        # Append results to output
+        outTemp <- data.frame(nSeq = s, 
+                              protocol = p,  
+                              BFtype = bf,
+                              coef = as.character(as.expression(eq)), 
+                              r = coef, 
+                              slope = slope, 
+                              intercept = intercept) 
+        
+        out = bind_rows(out, outTemp)
+      } else if (test == "spearman") {
+        if (stat == 'mean') sModel <- cor.test(df_sub$mean, df_sub$value, method = "spearman")
+        if (stat == 'median') sModel <- cor.test(df_sub[[medianCol]], df_sub$value, method = "spearman")
+        eqS <- paste0(rho, ' = ', format(sModel$estimate, digits = 3), 
+                      ", p = ", format(sModel$p.value, digits = 3))
+        pVal = sModel$p.value
+        rho = sModel$estimate
+        
+        # Append results to output
+        out <- data.frame(nSeq = s, 
+                          protocol = p,  
+                          BFtype = bf,
+                          coef = eqS, 
+                          rho = rho, 
+                          p = pVal) 
+        
+        
+      } else {
+        warning("The test argument is not valid")
+      }
+    }
+  }
+  
   return(out)
   
 }
