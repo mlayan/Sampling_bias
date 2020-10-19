@@ -1061,7 +1061,7 @@
     </joint>
     <operators idref="operators"/>
     <!-- write log to screen                                                     -->
-    <log id="screenLog" logEvery="1000">
+    <log id="screenLog" logEvery="2000">
       <column label="Joint" dp="4" width="12">
         <joint idref="joint"/>
       </column>
@@ -1087,7 +1087,7 @@
       <!-- END Discrete Traits Model                                               -->
     </log>
     <!-- write log to file                                                       -->
-    <log id="fileLog" logEvery="1000" fileName="sim1_uniform_150.log.txt" overwrite="false">
+    <log id="fileLog" logEvery="2000" fileName="sim1_uniform_150.log.txt" overwrite="false">
       <joint idref="joint"/>
       <prior idref="prior"/>
       <likelihood idref="likelihood"/>
@@ -1130,17 +1130,15 @@
         <strictClockBranchRates idref="regions.branchRates"/>
       </trait>
       <joint idref="joint"/>
-      <!-- START Ancestral state reconstruction                                    -->
-      <trait name="regions.states" tag="regions">
-        <ancestralTreeLikelihood idref="regions.treeLikelihood"/>
-      </trait>
+      <!-- START Ancestral state reconstruction     							-->
       <!-- END Ancestral state reconstruction                                      -->
-      <trait name="regions.count" tag="regions.count">
-        <ancestralTreeLikelihood idref="regions.treeLikelihood"/>
-      </trait>
-      <trait name="regions.count" tag="regions.count">
-        <ancestralTreeLikelihood idref="regions.treeLikelihood"/>
-      </trait>
+      <!-- START Markov jumps reconstruction
+			<trait name='regions.count' tag='regions.count'>
+				<ancestralTreeLikelihood idref='regions.treeLikelihood' />
+			</trait>
+			<markovJumpsTreeLikelihood idref="regions.treeLikelihood"/>                  -->
+      <!-- END Markov jumps reconstruction                                     -->
+      <markovJumpsTreeLikelihood idref="regions.treeLikelihood"/>
     </logTree>
   </mcmc>
   <report>
