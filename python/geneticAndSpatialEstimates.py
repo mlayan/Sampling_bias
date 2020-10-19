@@ -120,7 +120,8 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 		regions.remove("rates")
 		nRegions = len(regions)
 	else:
-		raise ValueError("The number of migration rates ({0}) doesn't correspond to the number of regions ({1})".format(len(regions), nRegions))
+		raise ValueError("The number of migration rates ({0}) doesn't correspond to \
+							the number of regions ({1})".format(len(regions), nRegions))
 
 	# List of regions
 	regions = list(set(regions))
@@ -129,7 +130,7 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 	logRootLocation = None
 	if 'rootLocation' in log.columns.tolist():
 		logRootLocation = log[['rootLocation']].reset_index(drop=True) 
-		logRootLocation.rootLocation = logRootLocation.rootLocation.str.replace(' ', '')# Remove spaces if any
+		logRootLocation.rootLocation = logRootLocation.rootLocation.str.replace(' ', '') # Remove spaces if any
 		log.drop(columns = 'rootLocation', inplace = True)
 
 	##############################################
@@ -161,13 +162,17 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 	# ESS() on log
 	if ess:
 		stepInterval = log['state'].iloc[1] - log['state'].iloc[0]
-		results['ESS'] = log.drop(columns=['state']).apply(lambda x: ESS(x, stepInterval))
+		results['ESS'] = log.drop(columns=['state']).apply(
+			lambda x: ESS(x, stepInterval)
+			)
 
 	# Compute 95% HPD intervals 
-	results['2_5_hpd'] = log.drop(columns=['state']).apply(lambda x : 
-		hpd(x, lower_only = True)) 
-	results['97_5_hpd'] = log.drop(columns=['state']).apply(lambda x : 
-		hpd(x, upper_only = True))
+	results['2_5_hpd'] = log.drop(columns=['state']).apply(
+		lambda x: hpd(x, lower_only = True)
+		) 
+	results['97_5_hpd'] = log.drop(columns=['state']).apply(
+		lambda x: hpd(x, upper_only = True)
+		)
 
 	# Change results index
 	results['parameter'] = results.index
@@ -186,7 +191,7 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 				# essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
 
 				essRates = results.loc[results.parameter.str.match('^rates_|^forwards_'), ['ESS', 'parameter']]            
-				if "dta" in runType.lower():
+				if 'dta' in runType.lower():
 					essRates.parameter.replace('rates_', 'forwards_', regex=True, inplace=True)
 				elif 'mascot' in runType.lower(): 
 					essRates.parameter.replace('rates_', 'backwards_', regex=True, inplace=True)
@@ -197,18 +202,22 @@ def logFileWrangler(fileName, directory, nMatrix, runType, regionDict,
 			else:
 				bssvsResults = bssvsStatistics(log, nRegions, symmetric, runType, forwards)
 
+			
+			# Add BF to Markov Jumps 
+			results['param'] = results.parameter.str.replace(r'^[a-zA-Z]*_', '')
+			results.loc[~results.parameter.str.contains('nMigration'), 'param'] = np.nan
+			results = pd.merge(results, bssvsResults[['BF', 'param']], on = ['param'], how = "left")
+
+			# Concatenate results 
 			results = pd.concat([results, bssvsResults], sort = False, ignore_index = True) 
+			results.drop(columns = "param", inplace = True)
+
 			break
 
 	##############################################
 	# Add root location if wanted
 	##############################################
 	if rootLocation:
-		# if runType.lower() == "basta":
-		# 	regionDict = dict(zip(range(nRegions), sorted(regions)))
-		# 	if not logRootLocation:
-		# 		logRootLocation = log
-
 		rootResults = rootLocationAnalysis(fileName, directory, runType, regions, 
 			logRootLocation, regionDict)
 
@@ -423,10 +432,12 @@ def bssvsStatistics(log, nRegions, symmetric, runType, forwards = "false",
 	# Compute BF based on indicator variable 
 	# of migration rates
 	colsI = [x for x in log.columns if 'indicators_' in x]
-	bfD = log[colsI].apply(lambda x: bayesFactorRates(x, nRegions, sym = symmetric), 
-		axis = 0)
-	bfD = pd.DataFrame(bfD, columns = ['BF']).rename_axis('parameter').reset_index()
-	bfD.parameter = bfD.parameter.str.replace('indicators_', '')
+	bfD = log[colsI].apply(
+		lambda x: bayesFactorRates(x, nRegions, sym = symmetric), 
+		axis = 0
+		)
+	bfD = pd.DataFrame(bfD, columns = ['BF']).rename_axis('param').reset_index()
+	bfD.param = bfD.param.str.replace('indicators_', '')
 	
 	##############################################
 	# rates*indicators dataframe
@@ -463,9 +474,9 @@ def bssvsStatistics(log, nRegions, symmetric, runType, forwards = "false",
 	bssvs.reset_index(inplace = True) # convert row indexes into columns
 
 	# Concatenate dataframes
-	out = pd.merge(bfD, bssvs, on = ['parameter'])
-	out.drop(columns = 'parameter', inplace = True)
-	out.rename(columns = {'param':'parameter'}, inplace = True)
+	out = pd.merge(bfD, bssvs, on = ['param'])
+	#out.drop(columns = 'parameter', inplace = True)
+	#out.rename(columns = {'param':'parameter'}, inplace = True)
 
 	# Add the ESS if they were calculated 
 	if not essRates.empty:
@@ -506,35 +517,35 @@ def longFormat(log, prefix):
 		data['id'] = data.index
 
 		# Rearrange the dataframe in long format
-		data = data.melt(id_vars = ['id'], var_name = 'param', value_name = p)
+		data = data.melt(id_vars = ['id'], var_name = 'parameter', value_name = p)
 
 		if p == "rates":
 			if len(prefix) > 1:
-				data.param.replace(to_replace = p, 
+				data.parameter.replace(to_replace = p, 
 					value = 'bssvs_backwards', 
 					inplace = True, 
 					regex = True)
 			else:
-				data.param.replace(to_replace = p, 
+				data.parameter.replace(to_replace = p, 
 					value = 'bssvs_forwards', 
 					inplace = True, 
 					regex = True)
 
-			data['parameter'] = data.param.replace(to_replace='^[a-z\_]*', 
+			data['param'] = data.parameter.replace(to_replace='^[a-z\_]*', 
 				value = '', regex = True) 
 			dataP.append(data)
 
 		else:
-			data.param.replace(to_replace = p, 
+			data.parameter.replace(to_replace = p, 
 				value = 'bssvs_forwards', 
 				inplace = True, 
 				regex = True)
 			data.rename(columns = {'forwards':'rates'}, inplace = True)
-			data['destination'] = data.param.replace(to_replace='^\w*_', 
+			data['destination'] = data.parameter.replace(to_replace='^\w*_', 
 														value = '', regex = True)
-			data['source'] = data.param.replace(to_replace='^[a-z\_]*|_\w*$', 
+			data['source'] = data.parameter.replace(to_replace='^[a-z\_]*|_\w*$', 
 														value = '', regex = True)
-			data['parameter'] = data.destination + "_" + data.source
+			data['param'] = data.destination + "_" + data.source
 			data.drop(columns=['destination', 'source'], inplace=True)
 			dataP.append(data)
 
@@ -545,12 +556,11 @@ def longFormat(log, prefix):
 	colsI = [x for x in log.columns if 'indicators_' in x]
 	dataI = log[colsI].copy()
 	dataI['id'] = dataI.index
-	dataI = dataI.melt(id_vars = ['id'], var_name = 'parameter', value_name = 'indicators')
-	dataI.parameter.replace(to_replace = '^[a-z]*_', 
-		value = '', inplace = True, regex = True)
+	dataI = dataI.melt(id_vars = ['id'], var_name = 'param', value_name = 'indicators')
+	dataI.param = dataI.param.replace(to_replace = '^[a-z]*_', value = '', regex = True)
 
 	# Merge dataframes
-	merged = pd.merge(dataI, dataP, on =  ['id', 'parameter'])
+	merged = pd.merge(dataI, dataP, on =  ['id', 'param'])
 
 	return(merged)
 
@@ -689,5 +699,86 @@ def rootLocationAnalysis(fileName, directory, model, regions,
 
 	# Add columns
 	out = out.append(pd.DataFrame({"parameter": ["KL"], "value": [kl]}), ignore_index = True)
+
+	return(out)
+
+
+
+
+
+
+
+
+
+
+def ratesAndAdjustedBF(fileName, directory, beastModel):
+	"""
+	Function to compute the BF and adjusted BF of transition rates in DTA runs
+		- fileName (str) : name of the log file with the .log.txt extension
+		- directory (str): location of the original run
+		- beastModel (str): name of the beast model. This name will be replaced by 
+		beastModel_adjustedBF to load the associated run
+
+	The function returns a pandas dataframe with.
+
+	"""
+	###########################################
+	# Get informations
+	nSim = re.sub(r'^sim|_.*$', '', fileName)
+	nSeq = re.sub(r'^.*_|\.log\.txt', '', fileName)
+	protocol = re.sub('^sim[0-9]*_|_[0-9]*\.log\.txt$', '', fileName)
+
+	# Directory 
+	directory = checkDirectory(directory)
+	dir1 = directory
+	dir2 = directory.replace(beastModel, beastModel + "_" + "adjustedBF")
+
+	# Load log files without burnin (considered 10%)
+	log1 = pd.read_csv(dir1 + fileName, sep = "\t", comment = "#").iloc[1000:]
+	log1.columns = log1.columns.str.replace(' ', '')
+	log2 = pd.read_csv(dir2 + fileName, sep = "\t", comment = "#").iloc[1000:]
+	log2.columns = log2.columns.str.replace(' ', '')
+	
+	###########################################
+	# Output dataframe
+	indicatorCols = [x for x in log1.columns if 'indicators' in x]
+	outCols = ["parameter", "mean", "median", "97_5_hpd", "2_5_hpd", "97_5", "2_5", "BF", "adjustedBF"]
+	out = pd.DataFrame(index = range(len(indicatorCols)), columns = outCols)
+	out.parameter = [re.sub(r'.*indicators\.', '', x) for x in indicatorCols]
+
+	# Number of regions
+	regions = [re.sub('^.*\.', '', x) for x in log1.columns.tolist() if 'rates' in x]
+	nRegions = len(set(regions))
+
+	# Compute BF 
+	for col in indicatorCols:
+
+		maskOut = out.parameter == re.sub(r'.*indicators\.', '', col)
+		maskIn = log1[col] == 1
+		rateCol = col.replace('indicators', 'rates')
+		
+		# Fill summary statistics of the transition rate
+		out.loc[maskOut, "mean"] = log1[[rateCol]][maskIn].mean()[0]
+		out.loc[maskOut, "median"] = log1[[rateCol]][maskIn].median()[0]
+		out.loc[maskOut, "97_5"] = log1[[rateCol]][maskIn].quantile(q = 0.975)[0]
+		out.loc[maskOut, "97_5_hpd"] = log1[[rateCol]][maskIn].apply(lambda x: hpd(x, upper_only = True))[0]
+		out.loc[maskOut, "2_5"] = log1[[rateCol]][maskIn].quantile(q = 0.025)[0]
+		out.loc[maskOut, "2_5_hpd"] = log1[[rateCol]][maskIn].apply(lambda x: hpd(x, lower_only = True))[0]
+
+		# BF
+		out.loc[maskOut, "BF"] = log1[[col]].apply(lambda x: bayesFactor(x, nRegions))[0]
+
+		# Adjusted Bayes Factor
+		p1 = log1[[col]].sum()[0] / log1.shape[0]
+		p2 = log2[[col]].sum()[0] / log2.shape[0]
+		out.loc[maskOut, "adjustedBF"] = (p1/(1-p1))/(p2/(1-p2))
+
+
+	###########################################
+	# Additionnal informations
+	out.parameter = out.parameter.str.replace('.', '_')
+	out['nSeq'] = nSeq
+	out['nSim'] = nSim
+	out['protocol'] = protocol
 
 	return(out)

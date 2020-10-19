@@ -11,10 +11,10 @@ __creation_date__ = '2020-04-21'
 __last_update__ = '2020-04-21'
 
 # Root
-root = ["0_0"]
+indexCase = ["0_0"]
 
 # RootDate
-rootDate = 1989.0
+startDate = 1989.0
 
 # Protocols
 protocols = ['uniformS_150',

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python 
 # -*- coding: utf-8 -*-
 
 """
@@ -11,26 +11,29 @@ __creation_date__ = '2020-01-16'
 
 
 # Import libraries
-import os
-import sys
-import re
-import pandas as pd
 import numpy as np
-
+import os
+import pandas as pd
+import re
+import sys
 
 # Import modules
-from lxml import etree
 from Bio import SeqIO
 from Bio import Phylo
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from IPython.display import display
+from lxml import etree
 
 # Tailored modules
-from handleDirectories import checkDirectory
+from Python_modules.handleDirectories import checkDirectory
 
 ## To use regular expressions in xpath
 regexpNS = 'http://exslt.org/regular-expressions'
+
+## Import templates
+from Python_modules.templates import *
+
 
 
 
@@ -45,7 +48,7 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 	dirInput = None, dirOutput = None, outputName = None, 
 	prefix = None, fixedTreeFile = None, fixedTreeDirectory= None, 
 	version = 1, substitutionModel = "hky", markovJumps = False, 
-	mascotPriors = False):
+	mascotPriors = False, adjustedBF = False, seed = None):
 	"""
 	Function to generate based on :
 		- Beast 1 template
@@ -73,7 +76,7 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 	"""
 	##################################################
 	## Template version
-	templateFile = "template_beast1_"+ substitutionModel.lower() + "_v" + str(version) + ".xml"
+	templateFile = "template_beast1_" + substitutionModel.lower() + "_v" + str(version) + ".xml"
 
 	##################################################
 	## Load files
@@ -130,8 +133,7 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 	if outputName:
 		outputFileName = prefix + outputName
 	else:
-		outputFileName = re.sub(".fasta", "", fileName)
-		outputFileName = prefix + re.sub("_sequences", "", outputFileName)
+		outputFileName = prefix + fileName.replace(".fasta", "").replace("_sequences", "")
 
 	##################################################
 	## Modify the core of the XML file
@@ -203,6 +205,15 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 		template = addMarkovJumps(template, regions)
 
 	##################################################
+	## Randomize regions to compute an adjusted BF
+	# Add the operator to randomize regions
+	if adjustedBF:
+		randomizeBF = etree.Element('tipStateSwapOperator', weight="2", uniformRandomization="true")
+		randomizeBF.append(etree.Element('ancestralTreeLikelihood', idref='regions.treeLikelihood'))
+
+		root.find("operators").append(randomizeBF)
+
+	##################################################
 	# If estimation is performed on the tree topology
 	## Fixed tree 
 	if fixedTreeFile or fixedTreeDirectory:
@@ -219,9 +230,9 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 	## Change the steps at which data is collected
 	for nodes in root.findall("mcmc/"):
 		attribs = nodes.attrib
-	for key, value in attribs.items():
-		if 'logEvery' in key:
-			nodes.set(key, str(logEvery))
+		for key, value in attribs.items():
+			if 'logEvery' in key:
+				nodes.set(key, str(logEvery))
 
 	##################################################
 	## Change file name
@@ -239,7 +250,7 @@ def xml_beast1(fileName, regionsFile, logEvery, chainLength,
 		standalone="yes", pretty_print=True, xml_declaration=True)
 
 	# Write bash file
-	bash_xml(outputFileName, dirOutput, logEvery, beastVersion = 1)
+	bash_xml(outputFileName, dirOutput, logEvery, beastVersion = 1, seed = seed)
 
 
 
@@ -303,12 +314,22 @@ def addMarkovJumps(template, regions):
 	node2 = root.find('mcmc/log/ancestralTreeLikelihood')
 	node2.tag = 'markovJumpsTreeLikelihood'
 
-	# Add element in logTree
+	# Edit logTree element 
+	# Add element to store the complete migration history in the trees file
+	mJHistory = etree.Element('markovJumpsTreeLikelihood', idref='regions.treeLikelihood')
+	root.find('mcmc/logTree').append(mJHistory)
+
+	# Remove the element that stores the ancestral nodes states (redundant with the previous element)
+	for toRemove in root.xpath('mcmc/logTree/trait[@name="regions.states"]'):
+		toRemove.getparent().remove(toRemove)
+
+	"""
+	# Add region counts element to logTree to store the number of 
+	# migrations in the trees files 
 	regionsCount = etree.Element('trait', name='regions.count', tag='regions.count')
 	regionsCount.append(etree.Element('ancestralTreeLikelihood', idref='regions.treeLikelihood'))
 	root.find('mcmc/logTree').append(regionsCount)
 
-	"""
 	# Add the complete history file 
 	logTree = etree.Element('logTree', 
 	fileName='filename.regions.history.trees.txt',
@@ -525,8 +546,7 @@ def xml_mascot(fileName, regionsFile, logEvery, chainLength, version,
 	if outputName:
 		outputFileName = prefix + outputName
 	else:
-		outputFileName = re.sub(".fasta", "", fileName)
-		outputFileName = prefix + re.sub("_sequences", "", outputFileName)
+		outputFileName = prefix + fileName("_sequences", "").replace(".fasta", "")
 
 	poisson = root.find('run/distribution/distribution/prior/distr/parameter')
 	if dtaPriors:
@@ -703,8 +723,7 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version,
 	if outputName:
 		outputFileName = prefix + outputName
 	else:
-		outputFileName = re.sub(".fasta", "", fileName)
-		outputFileName = prefix + re.sub("_sequences", "", outputFileName)
+		outputFileName = prefix + fileName.replace(".fasta", "").replace("_sequences", "")
 
 	##################################################
 	## Loop to create string elements to add
@@ -831,8 +850,11 @@ def xml_basta(fileName, regionsFile, logEvery, chainLength, version,
 
 
 
-def bash_xml(fileName, directory, logEvery, beastVersion):
-	""""""
+def bash_xml(fileName, directory, logEvery, beastVersion, seed = None):
+	"""
+	Write a bash script to launch Beast jobs on the Pasteur cluster 
+	For BEAST2 models, BEAST1 should be unloaded and BEAST2 loaded due to my default environment 
+	"""
 
 	# Write file 
 	f = open(directory + fileName + ".sh", 'w')
@@ -840,7 +862,7 @@ def bash_xml(fileName, directory, logEvery, beastVersion):
 	f.write("#SBATCH -o " + fileName + ".log\n")
 	f.write("#SBATCH -e " + fileName + ".err\n")
 	# f.write("#SBATCH --exclude=tars-694,tars-695\n")
-	f.write("#SBATCH -p mmmi -q mmmi\n#SBATCH --mem=8000\n#SBATCH --mail-user=maylis.layan@pasteur.fr --mail-type=END\n\n")
+	f.write("#SBATCH -p mmmi -q mmmi\n#SBATCH --mem=10000\n#SBATCH --mail-user=maylis.layan@pasteur.fr --mail-type=END\n\n")
 
 	if beastVersion == 2:
 		f.write("module unload beast/v1.10.4\n")
@@ -848,7 +870,13 @@ def bash_xml(fileName, directory, logEvery, beastVersion):
 		f.write("srun beast -beagle -beagle_CPU -statefile " + fileName + ".states " + fileName + ".xml\n\n")
 
 	else:
-		f.write("srun beast -save_every " + str(logEvery) + " -save_state " + fileName + ".states  " + fileName + ".xml\n\n")
+		if seed:
+			command = "srun java -Djava.library.path=/local/gensoft2/lib/beagle-lib/3.1.1/lib -jar ~/.beast/1.10.5/lib/beast.jar -save_every " + str(logEvery) + " -save_state " + fileName + ".states -seed " + seed + " " + fileName + ".xml\n\n"
+			#command = "srun beast -save_every " + str(logEvery) + " -save_state " + fileName + ".states -seed " + seed + " " + fileName + ".xml\n\n"
+		else:
+			command = "srun beast -save_every " + str(logEvery) + " -save_state " + fileName + ".states " + fileName + ".xml\n\n"
+
+		f.write(command)
 
 	f.write("exit 0")
 	f.close()

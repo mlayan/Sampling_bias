@@ -11,23 +11,26 @@ __creation_date__ = '2020-02-27'
 __last_update__ = '2020-04-21'
 
 # Modules
-import os
-import sys
-import re
-import math
-import random
 import dendropy
 import itertools
-import pandas as pd
+import math
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor
+import os
+import pandas as pd
+import random
+import re
+import sys
+
+# Import functions
 from Bio import Phylo
+from concurrent.futures import ProcessPoolExecutor
 from io import StringIO
+from itertools import permutations
 from statistics import mean
 
 # Import fixed data from trees
-from simulatedTreesData import *
 from handleDirectories import checkDirectory
+from simulatedTreesData import *
 
 
 
@@ -53,7 +56,7 @@ def getAncestors(individual, transmissionChain):
 	ancestorsList = []
 	ancestor = None
 
-	while not ancestor in root:
+	while not ancestor in indexCase:
 		ancestor = transmissionChain.loc[transmissionChain['case'] == individual, 'source'].values[0]
 		ancestorsList.append(ancestor)
 		individual = ancestor
@@ -77,6 +80,7 @@ def countsAndRates(df, t, regionDic):
 			regions : names of cases' region
 			regions.source : names of sources' region
 		- time (int) : time span of the transmission chain in days
+		- regionDic (dict): dictionary of the identifiers (keys) and the region names (values)
 
 	It returns a simplified dataframe with the following columns:
 		- value (float) : number or rate of migration event  
@@ -129,6 +133,26 @@ def countsAndRates(df, t, regionDic):
 	out = pd.concat([counts, rates, frequencies], ignore_index=True, sort = False)
 
 	return(out)
+
+
+
+
+
+
+
+
+
+
+def reconstructSampleName(x):
+	"""
+	"""
+	if isinstance(x, np.integer):
+		return(str(math.ceil(x)))
+	elif x.is_integer(): 
+		return(str(math.ceil(x)))
+	else: 
+		return(str(round(x, 6)))
+
 
 
 
@@ -211,6 +235,8 @@ def treeScan(ind, df, nodeDate = None):
 
 	if len(df.columns) != 3:
 		raise ValueError("Dataframe has not the correct dimension : {} columns instead of 3".format(len(df.columns)))
+	
+	# Rename columns
 	df.columns = ['source', 'child', 'label']
 
 	if not nodeDate : 
@@ -245,12 +271,7 @@ def treeScan(ind, df, nodeDate = None):
 		if len(label) > 1:
 			raise ValueError("{0} appears multiple times in the dataframe as a tip".format(ind))
 
-		if label[0].is_integer():
-			labelString = str(math.ceil(label[0]))
-		else:
-			labelString = str(round(label[0], 6))
-
-		print(labelString)
+		labelString = reconstructSampleName(label[0])
 
 		out = ind + "_" + labelString
 		return(out, label[0])
@@ -264,7 +285,7 @@ def treeScan(ind, df, nodeDate = None):
 
 
 
-def newickTree(rootTree, df, rootSDate, innerlabel = True):
+def newickTree(rootTree, df, rootDate, innerlabel = True):
 	"""
 	Function that returns the final Newick tree from a phylogenetic tree in a dataframe format.
 	It is based on the treeScan(NoLabel) functions.
@@ -274,18 +295,18 @@ def newickTree(rootTree, df, rootSDate, innerlabel = True):
 			- column 1: nodes name
 			- column 2: children name
 			- column 3: sampling date of children
-		- rootSDate (int): sampling date of rootTree
+		- rootDate (int): sampling date of rootTree
 		- innerlabel (bool): add branch length in the Newick tree
 
 	Output:
 		- out (string): Final Newick tree
 	"""
 	if innerlabel:
-		(out, nodeDate) = treeScan(ind = rootTree, df = df, nodeDate = rootSDate) 
+		(out, nodeDate) = treeScan(ind = rootTree, df = df, nodeDate = rootDate) 
 
-		if nodeDate != rootSDate:
+		if nodeDate != rootDate:
 			out = "(" + out 
-			out += ":" + str(nodeDate - rootSDate) + ");"
+			out += ":" + str(nodeDate - rootDate) + ");"
 		else:
 			out += ";"
 
@@ -295,6 +316,218 @@ def newickTree(rootTree, df, rootSDate, innerlabel = True):
 		out = treeScanNoLabel(rootTree, df)
 		out += ";"
 		return(out)
+
+
+
+
+
+
+
+
+
+
+def nexusTree(rootTree, df, rootDate, rootLocation, sampleCompleteNames, filename):
+	"""
+	Function that returns the final Newick tree from a phylogenetic tree in a dataframe format.
+	It is based on the treeScan(NoLabel) functions.
+	Arguments:
+		- rootTree (string): name of the tree root
+		- df (dataframe) : phylogenetic tree
+			- column 1: nodes name
+			- column 2: children name
+			- column 3: sampling date of children
+			- column 4: children location
+			- column 5: nodes location
+		- rootDate (int): sampling date of rootTree
+		- innerlabel (bool): add branch length in the Newick tree
+
+	Output:
+		- out (string): Final Newick tree
+	"""
+	if len(df.columns) != 5:
+		raise ValueError("Dataframe has not the correct dimension : {} columns instead of 5".format(len(df.columns)))
+
+	## Change column names
+	df.columns = ['source', 'child', 'samp.dates', 'regions', 'regions.source']
+
+	# Assign rootDate when not specified
+	if not rootDate : 
+		rootDate = df[df['child'] == ind]['label'].values
+		if len(rootDate) > 1:
+			raise ValueError("{0} appears multiple times in the dataframe as a tip".format(ind))
+		rootDate = rootDate[0]
+
+	# Create empty tree with taxon names 
+	taxon_namespace = dendropy.TaxonNamespace(sampleCompleteNames)
+	tree = dendropy.Tree(taxon_namespace = taxon_namespace)
+ 
+	# Add nodes and annotations programmatically
+	out = treeScanNexus(tree, df, rootTree, sourceDate = rootDate, 
+		sourceLoc = rootLocation, treeRoot = True, filename = filename)
+
+	return(out)
+
+
+
+
+
+
+
+
+
+def treeScanNexus(tree, df, ind, nMig = None, sourceDate = None, sourceLoc = None, 
+                  treeRoot = False, filename = None, **detailedCounts):
+	"""
+	Scan the simulated transmission chain to write a tree with complete annotations
+	"""
+	# Offspring of ind
+	descCond = (df['source'] == ind)    # Condition to get the offspring of ind
+	desc = list(df[descCond]['child'])  # List of ind's offspring
+	descN = sum(descCond)               # Size of ind's offspring
+
+	# ind has at least one descendant
+	if descN != 0:
+
+		# Ind characteristics
+		if treeRoot: # For the tree root
+			indLoc = sourceLoc
+			indDate = sourceDate
+			# Create seed node
+			tree.seed_node.regions_states = indLoc
+			tree.seed_node.annotations.add_bound_attribute("regions_states", 
+				annotation_name="regions.states")
+
+		else:        # For inner nodes
+			indLoc = df[descCond]['regions.source'].iloc[0]
+			indDate = df[df['child'] == ind]['samp.dates'].iloc[0]
+			sourceLoc = df[df['child'] == ind]['regions.source'].iloc[0]
+			# Migration events
+			if not nMig: nMig = 0
+			if indLoc != sourceLoc: nMig += 1
+			# Detailed migration events
+			if detailedCounts:
+				detailedCountsInner = getDetailedCounts(indLoc, sourceLoc, df, **detailedCounts)
+			else:
+				detailedCountsInner = getDetailedCounts(indLoc, sourceLoc, df)
+
+
+		if descN == 1: # One descendant
+			if treeRoot:
+				childNode = treeScanNexus(tree, df, desc[0], sourceDate=indDate)
+				tree.seed_node.add_child(childNode)
+				return(tree)
+			else:
+				return treeScanNexus(tree, df, desc[0], nMig = nMig, 
+					sourceDate = sourceDate, **detailedCountsInner)               
+
+		else: # Several descendants
+
+			if treeRoot:
+				# Add children nodes
+				for d in desc:
+					childNode = treeScanNexus(tree, df, d, sourceDate = indDate)
+					tree.seed_node.add_child(childNode)
+				return(tree)
+
+			else:
+				# Create inner node
+				innerNode = dendropy.Node(edge_length = indDate - sourceDate)
+				innerNode = addDetailedCountsToNode(innerNode, indLoc, sourceLoc, 
+					df, nMig, **detailedCountsInner)
+
+				# Add children nodes
+				for d in desc:
+					childNode = treeScanNexus(tree, df, d, sourceDate = indDate)
+					innerNode.add_child(childNode)
+
+				return(innerNode)
+
+
+	# ind is a tip of the tree
+	else:
+		# Ind characteristics
+		indDate = df[df['child'] == ind]['samp.dates'].values[0]
+		indLoc = df[df['child'] == ind]['regions'].values[0]
+		sourceLoc = df[df['child'] == ind]['regions.source'].values[0]
+
+		# Number of migrations
+		if not nMig: nMig = 0
+		if indLoc != sourceLoc: nMig += 1
+		if detailedCounts:
+			detailedCountsTip = getDetailedCounts(indLoc, sourceLoc, df, **detailedCounts)
+		else:
+			detailedCountsTip = getDetailedCounts(indLoc, sourceLoc, df)   
+
+		# Create dendropy node 
+		tipNode = dendropy.Node(edge_length = indDate - sourceDate)
+		tipNode = addDetailedCountsToNode(tipNode, indLoc, sourceLoc, df, nMig, **detailedCountsTip)
+
+		# Taxon name 
+		indDateString = reconstructSampleName(indDate)
+		tipNode.taxon = tree.taxon_namespace.get_taxon(ind + "_" + indDateString)
+
+		return(tipNode)
+
+
+
+
+
+
+
+
+
+
+
+def addDetailedCountsToNode(node, indLoc, sourceLoc, df, nMig, **detailedCounts):
+	"""
+	Add migration counts to the substanding edge of the node  
+	"""    
+	# # Get the dictionary of the detailed counts
+	# regionCounts = getDetailedCounts(indLoc, sourceLoc, df, **detailedCounts)
+	# Add the detailed counts to the node
+	for k, v in detailedCounts.items():
+		node.edge.annotations.add_new(k, v)
+		#node.edge.annotations.add_bound_attribute(k) 
+
+	# Add total counts
+	node.edge.regions_count = nMig
+	node.edge.annotations.add_bound_attribute("regions_count", 
+		annotation_name="regions.count")
+
+	# Add region states
+	node.regions_states = indLoc
+	node.annotations.add_bound_attribute("regions_states", 
+		annotation_name="regions.states")
+
+	return(node)
+
+
+
+
+
+
+
+
+
+
+def getDetailedCounts(indLoc, sourceLoc, df, **detailedCounts):
+	"""
+	Create or edit a dictionary of migration counts 
+	"""
+	# Create a dictionary if it doesn't exist 
+	if not detailedCounts:
+		# Get the set of regions if detailedCounts does not exist
+		regionSet = set(list(df['regions'].unique()) + list(df['regions.source'].unique()))
+		regionSet = permutations(regionSet, 2)
+		regionPermutations = ["counts_" + x + "_" + y for x,y in regionSet]
+		# Create "empty" dictionary
+		detailedCounts = {k:0 for k in regionPermutations}
+
+	# Update if necessary the dictionary
+	if indLoc != sourceLoc and sourceLoc:
+		detailedCounts['counts_' + sourceLoc + "_" + indLoc] += 1
+
+	return(detailedCounts)
 
 
 
@@ -335,9 +568,10 @@ def trimPhylogeny(transChain, tips, ancestorsList, ancestorsCommon, rootTree):
 	for x in tips:
 		if x in ancestorsSubtree:
 			addNode = "a_" + x
-			nodeDate = out[out['case'] == x ]['samp.dates'].iloc[0]        
+			nodeDate = out[out.case == x ]['samp.dates'].iloc[0]        
 			out.replace({x:addNode}, inplace = True)
-			out = out.append({'case': x, 'source': addNode, 'samp.dates': nodeDate + 0.001}, ignore_index = True)
+			out = out.append({'case': x, 'source': addNode, 'samp.dates': nodeDate + 0.001}, 
+				ignore_index = True)
 
 	return(out)
 
@@ -371,7 +605,7 @@ def trimPhylogeny2(transChain, tips, ancestorsList, ancestorsCommon, rootTree):
 	ancestorsSubtree.append(rootTree)
 
 	## Subset the transmission chain to ancestorsSubtree et subtree tips
-	out = transChain[['source', 'case', 'samp.dates']]
+	out = transChain[['source', 'case', 'samp.dates', 'regions', 'regions.source']]
 	out = out[out.source.isin(ancestorsSubtree)]
 	out = out[out.case.isin(ancestorsSubtree + tips)]
 
@@ -380,10 +614,17 @@ def trimPhylogeny2(transChain, tips, ancestorsList, ancestorsCommon, rootTree):
 	for x in tips:
 		if x in ancestorsSubtree:
 			addNode = "a_" + x    # Additionnal node which will be considered as the ancestor of x
-			nodeDate = out[out['case'] == x ]['samp.dates'].iloc[0]   # Sampling date of x     
+			nodeDate = out[out['case'] == x ]['samp.dates'].iloc[0]   # Sampling date of x
+			nodeLocation = out[out.case == x]['regions'].iloc[0] 	# Sampling location of x
+			nodeSourceLocation = out[out.case == x]['regions.source'].iloc[0] 	# Sampling location of the source of x
 			out.at[out['case'] == x, 'samp.dates'] = nodeDate - 0.000001
 			out.replace({x:addNode}, inplace = True)   # All occurences of x are replaced by the additionnal node
-			out = out.append({'case': x, 'source': addNode, 'samp.dates': nodeDate}, 
+			out = out.append({
+				'case':x, 
+				'source':addNode, 
+				'samp.dates':nodeDate, 
+				'regions':nodeLocation, 
+				'regions.source':nodeSourceLocation}, 
 			ignore_index = True) # new row corresponding to the branch (additionnalnode -> x)
 
 	return(out)
@@ -398,7 +639,7 @@ def trimPhylogeny2(transChain, tips, ancestorsList, ancestorsCommon, rootTree):
 
 
 def migrationEvents(filename, matrix, protocol, regionDic, 
-	extractNewickTree = False, directory = None):
+	extractNewickTree = False, extractNexusTree = False, directory = None):
 	"""
 	Function that computes the number of migration events between locations on the complete 
 	phylogeny or on the trimmed phylogeny from simulated transmission chains.
@@ -420,9 +661,6 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 
 		- The dataframe of the number of migration events between two locations. 
 	"""
-	print(filename, protocol)
-
-	##################################################  
 	if extractNewickTree and protocol == "all":
 		raise ValueError('No tree is extracted when migration events \
 			are evaluated over the entire phylogeny.')
@@ -437,7 +675,7 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 	transChain = pd.read_csv(directory + filename, sep="\t", header = 0)
 
 	# Drop the row corresponding to the root
-	transChain = transChain[transChain['case'] != root[0]]
+	transChain = transChain[transChain['case'] != indexCase[0]]
 
 	# Add regions.source column to transChain
 	transChain['regions.source'] = transChain['patch.source'].replace(regionDic)
@@ -446,7 +684,7 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 	nSim = re.findall(r'sim([0-9]+)_', filename)[0]
 
 	# Location of the start of the epidemic
-	rootLocation = list(regionDic.values())[0]
+	startLocation = list(regionDic.values())[0]
 	
 	##################################################
 	## Extract informations 
@@ -467,6 +705,8 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 		## individuals that were sampled
 		# List of individuals in the sample
 		sample = transChain['case'][transChain[protocol] == 1]
+		sampleCompleteNames = sample + "_" + \
+							transChain[transChain[protocol] == 1]['samp.dates'].apply(lambda x: reconstructSampleName(x))   
 		sample = list(sample)
 
 		## Sampling date of the last sample
@@ -479,19 +719,19 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 		inter = set.intersection(*map(set, ancestors))
 		interL = list(inter)
 		if len(interL) == 1:
-			if root == interL:
-				rootS = root[0]
-				rootSLocation = rootLocation
-				rootSDate = rootDate
+			if indexCase == interL:
+				root = indexCase[0]
+				rootLocation = startLocation
+				rootDate = startDate
 			else:
 				raise ValueError("A single MCRA has been found : {0}. \
-					It does not correspond to {1}.".format(interL, root))
+					It does not correspond to {1}.".format(interL, indexCase))
 		else:
 			## Identification of sampling date and location of MRCA
 			sub = transChain[transChain['case'].isin(interL)].sort_values(by='samp.dates', ascending = False)
-			rootS = sub['case'].iloc[0]
-			rootSLocation = sub['regions'].iloc[0]
-			rootSDate = sub['samp.dates'].iloc[0]
+			root = sub['case'].iloc[0]
+			rootLocation = sub['regions'].iloc[0]
+			rootDate = sub['samp.dates'].iloc[0]
 
 		# nSeq
 		nSeq = re.match(r'.*_(\d+)$', protocol).group(1)
@@ -499,25 +739,26 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 			raise ValueError("{0} is not correctly formated.".format(protocol))
 
 		# EpidemicDuration in days  
-		treeHeight = lastDate - rootSDate
+		treeHeight = lastDate - rootDate
 		nDays = round(treeHeight*365.35)
 
 		## Trim phylogeny
-		t = transChain[(transChain['samp.dates'] >= rootSDate) & (transChain['samp.dates'] <= lastDate)].copy().reset_index()
+		t = trimPhylogeny2(transChain, sample, ancestors, inter, root)
+		# t = transChain[(transChain['samp.dates'] >= rootDate) & (transChain['samp.dates'] <= lastDate)].copy().reset_index()
 
 		##################################################
+		# Write nexus tree
+		if extractNexusTree:
+			tree = nexusTree(root, t, rootDate, rootLocation, sampleCompleteNames, filename)
+			treeFileName = "sim" + nSim + "_" + protocol + ".nex"
+			tree.write(path=directory + treeFileName, schema='nexus')
+
+		# Write Newick tree
 		if extractNewickTree:
-			## Create the Newick tree
-			df = trimPhylogeny2(t, sample, ancestors, inter, rootS)
-			tree = newickTree(rootS, df, rootSDate)
-
-			# Newick tree file name
+			tree = newickTree(root, t, rootDate)
 			treeFileName = "sim" + nSim + "_" + protocol + ".nwk"
-
-			# Write the tree to file
 			tree = Phylo.read(StringIO(tree), 'newick')
 			Phylo.write(tree, directory + treeFileName, 'newick')
-
 
 	##################################################
 	## Get migration events counts and rates 
@@ -533,7 +774,7 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 		out['nSeq'] = nSeq
 
 	else:
-		supp = pd.DataFrame({'value':[rootSDate, rootSLocation, treeHeight], 
+		supp = pd.DataFrame({'value':[rootDate, rootLocation, treeHeight], 
 			'parameter':['mrcaDate', 'mrcaLocation', 'treeHeight']})
 
 		out = pd.concat([counts, supp], ignore_index=True, sort=False)
@@ -548,6 +789,7 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 	print(filename, protocol, 'Done')
 
 	return(out)
+
 
 
 
@@ -624,8 +866,8 @@ def writeNewickTree(filename, transChain, protocol, directory = None):
 
 	## Identification of sampling date and location of MRCA
 	sub = transChain[transChain['case'].isin(interL)].sort_values(by='samp.dates', ascending = False)
-	rootS = sub['case'].iloc[0]
-	rootSDate = sub['samp.dates'].iloc[0]
+	root = sub['case'].iloc[0]
+	rootDate = sub['samp.dates'].iloc[0]
 
 	# nSeq
 	nSeq = re.findall("[150]+", protocol)[0]
@@ -633,12 +875,12 @@ def writeNewickTree(filename, transChain, protocol, directory = None):
 		raise ValueError("{0} is not correctly formated.".format(protocol))
 
 	## Trim phylogeny
-	t = transChain[(transChain['samp.dates'] >= rootSDate) & (transChain['samp.dates'] <= lastDate)].copy().reset_index()
+	t = transChain[(transChain['samp.dates'] >= rootDate) & (transChain['samp.dates'] <= lastDate)].copy().reset_index()
 
 	##################################################
 	## Create the Newick tree
-	df = trimPhylogeny2(t, sample, ancestors, inter, rootS)
-	tree = newickTree(rootS, df, rootSDate)
+	df = trimPhylogeny2(t, sample, ancestors, inter, root)
+	tree = newickTree(root, df, rootDate)
 
 	# Newick tree file name
 	treeFileName = "sim" + nSim + "_" + protocol + ".nwk"
