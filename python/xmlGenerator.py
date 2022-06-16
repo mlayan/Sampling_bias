@@ -177,24 +177,14 @@ def bash_xml(fileName, directory, logEvery, templateFile, chainLength, seed = No
 	f.write("#SBATCH -e " + fileName + ".err\n")
 
 	if 'mascot' in templateFile :
-		if '500' in fileName:
-			f.write("#SBATCH -p mmmi -q mmmi\n")
-		f.write("#SBATCH --mem=10000\n#SBATCH --mail-user=maylis.layan@pasteur.fr --mail-type=END\n\n")
-		f.write("module unload beast/v1.10.4\n")
-		f.write("module load beast/v2.6.6\n\n")
 		f.write("srun beast -beagle -beagle_CPU -statefile " + fileName + ".states " + fileName + ".xml\n\n")
 
 	elif 'basta' in templateFile:
-		f.write("#SBATCH -p mmmi -q mmmi\n")
-		f.write("#SBATCH --mem=10000\n#SBATCH --mail-user=maylis.layan@pasteur.fr --mail-type=END\n\n")
-		f.write("module unload beast/v1.10.4\n")
-		f.write("module load beast/v2.6.6\n\n")
 		f.write("srun beast -beagle -beagle_CPU -statefile " + fileName + ".states " + fileName + ".xml\n\n")
 
 	else:
 		if seed:
 			command = "srun java -Djava.library.path=/opt/gensoft/lib/beagle-lib/3.1.2/lib -jar ~/.beast/1.10.5/lib/beast.jar -save_every " + str(logEvery) + " -save_state " + fileName + ".states -seed " + seed + " " + fileName + ".xml\n\n"
-			#command = "srun beast -save_every " + str(logEvery) + " -save_state " + fileName + ".states -seed " + seed + " " + fileName + ".xml\n\n"
 		else:
 			command = "srun java -Djava.library.path=/opt/gensoft/lib/beagle-lib/3.1.2/lib -jar ~/.beast/1.10.5/lib/beast.jar -save_every " + str(logEvery) + " -save_state " + fileName + ".states " + fileName + ".xml\n\n"
 		f.write(command)
