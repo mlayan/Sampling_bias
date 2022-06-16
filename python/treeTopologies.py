@@ -48,55 +48,6 @@ def comparePairwisetMRCA(fileName, sim, **mcc):
 		- intercept
 		- slope
 	"""
-	# # Lists of pairs of taxon object for the simulated tree 
-	# simPairs = combinations(sort_namespace(sim.taxon_namespace), 2)
-
-	# # Lists of pairs of taxon object for the estimated trees
-	# mccPairs = {}
-	# mcctmrca = {}
-	# for k, v in mcc.items():
-	# 	mccPairs[k] = list(combinations(sort_namespace(v.taxon_namespace), 2))
-	# 	mcctmrca[k] = []
-
-	# # List of time distances
-	# simtmrca = []
-
-	# for i, (x, y) in enumerate(simPairs):
-	# 	simtmrca.append(dendropy.calculate.treemeasure.patristic_distance(sim, x, y))
-
-	# 	for k, v in mccPairs.items():
-	# 		x = v[i][0] 
-	# 		y = v[i][1]
-	# 		mcctmrca[k] += [dendropy.calculate.treemeasure.patristic_distance(mcc[k], x, y)]
-
-	# # Convert lists into numpy arrays and 
-	# # perform linear regression
-	# X = np.array(simtmrca).reshape(-1, 1)
-	# coef = []
-	# intercept = []
-	# slope = []
-
-	# for k, v in mcctmrca.items():
-
-	# 	# Convert to numpy array
-	# 	Y = np.array(v).reshape(-1, 1)
-
-	# 	# Linear regression
-	# 	linear_regressor = LinearRegression()
-	# 	model = linear_regressor.fit(X, Y)
-
-	# 	# Parameters 
-	# 	slope += model.coef_[0].tolist()
-	# 	intercept += model.intercept_.tolist()
-	# 	coef.append(model.score(X, Y))
-
-	# out = pd.DataFrame({'model' : list(mcc.keys()), 
-	# 	'coef': coef,
-	# 	'intercept' : intercept,
-	# 	'slope' : slope})
-
-	# return(out)
-
 
 	# Verify that lists of taxa are identical
 	simTaxa = sorted([x.label for x in sim.taxon_namespace])
@@ -239,9 +190,9 @@ def compareBeasttoSimulation(mccFile, matrix, mccDirectory, *models):
 
 	# Get simulated tree
 	simDirectory = mccDirectory.replace(to_replace, 'files')
-	simFile = mccFile.replace('mcc.tree', 'nwk')
+	simFile = mccFile.replace('mcc.tree', 'nex')
 	sim = dendropy.Tree.get(path = simDirectory + simFile, 
-			schema = 'newick', 
+			schema = 'nexus', 
 			preserve_underscores = True)
 
 	# Get inferred mcc trees
@@ -252,7 +203,6 @@ def compareBeasttoSimulation(mccFile, matrix, mccDirectory, *models):
 			trees[k] = dendropy.Tree.get(path = v + mccFile, 
 				schema = 'nexus', 
 				preserve_underscores = True)
-
 
 	# Get linear regression coefficient
 	data = comparePairwisetMRCA(mccFile, sim, **trees)

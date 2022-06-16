@@ -11,19 +11,20 @@ __creation_date__ = '2020-02-27'
 __last_update__ = '2020-05-01'
 
 # Import libraries
+import os
+import re
+from handleDirectories import checkDirectory
+
 import math
 import numpy as np
+import pandas as pd
 from collections import Counter
 from statistics import mean
+from ess import ESS_cython2
 
 # Variables specific to the module
 # The maximum lag to compute ESS 
 MAX_LAG = 2000
-
-
-
-
-
 
 
 
@@ -48,7 +49,19 @@ def hpd(x, upper_only = False, lower_only = False, conf = 95):
 
 	# If the length of x is too small, the 
 	# conf% hpd interval corresponds to x
-	if extent == L:
+	if L==0 :
+		if upper_only or lower_only:
+			return(float("nan"))
+		else:
+			return([float("nan"), float("nan")])
+
+	elif L==1:
+		if upper_only or lower_only:
+			return(S[0])
+		else:
+			return([S[0], S[0]])
+
+	elif extent == L:
 		if upper_only:
 			return(S[L-1])
 		elif lower_only:
@@ -134,21 +147,24 @@ def bayesFactorRates(x, nR, sym = False):
 	Function to compute the Bayes Factor for estimated spatial rates
 	See Lemey et al., 2009
 	"""
-	# Prior
-	if sym:
-		qk = (math.log(2) + nR - 1) / (nR*(nR-1)/2)
-	else:
-		qk = (math.log(2) + nR - 1) / (nR*(nR-1))
 
 	# Prior odds
-	priorqk = qk / (1 - qk)
-
-	# Posterior odds
-	if mean(x) == 1:
-		posterior = mean(x) - (1/len(x))
-		BF =  (posterior / (1-posterior)) / priorqk
+	if sym:
+		qk = (nR - 1) / (nR*(nR-1)/2) #(math.log(2) + nR - 1) / (nR*(nR-1)/2)
 	else:
-		BF = (mean(x)/(1-mean(x))) / priorqk
+		qk = (nR - 1) / (nR*(nR-1)) #(math.log(2) + nR - 1) / (nR*(nR-1))
+
+	prior_odds = qk / (1 - qk)
+
+	# BF
+	if isinstance(x, list) | isinstance(x, pd.core.series.Series): # When x is provided as a list
+		if mean(x) == 1:
+			posterior = 1 - (1/len(x))
+			BF =  (posterior / (1-posterior)) / prior_odds
+		else:
+			BF = (mean(x)/(1-mean(x))) / prior_odds
+	else : # When x is provided as a float
+		BF = (x/(1-x)) / prior_odds
 
 	return(BF)
 
@@ -161,81 +177,56 @@ def bayesFactorRates(x, nR, sym = False):
 
 
 
-def ESS(trace, sampleInterval):
-	"""Function to compute the ESS of trace
-	Arguments:
-		- trace: any object containing a list of floats or integers that 
-		can be coerced into a list
-		The trace SHOULD NOT contain the burn in 
 
-		- sampleInterval: the time between two steps in the trace
-
-	This code is based on two functions from Beast2 (see source code on Github):
-		- calcStats in beast.util.LogAnalyser (https://github.com/CompEvol/beast2/blob/master/src/beast/util/LogAnalyser.java)
-		- ACT in beast.core.util.ESS (https://github.com/CompEvol/beast2/blob/master/src/beast/core/util/ESS.java)
+def bayesFactor(x, nR, sym = False):
 	"""
-	# Change the type of trace because this function works on lists
-	if type(trace) != list:
-		trace = list(trace)
+	Function to compute the Bayes Factor for estimated spatial rates
+	See Lemey et al., 2009
+	"""
+	# Prior
+	if sym:
+		qk = (nR - 1) / (nR*(nR-1)/2) # (math.log(2) + nR - 1) / (nR*(nR-1)/2)
+	else:
+		qk = (nR - 1) / (nR*(nR-1)) # (math.log(2) + nR - 1) / (nR*(nR-1))
+
+	# Prior odds
+	priorqk = qk / (1 - qk)
+
+	# Posterior odds
+	BF = (np.float64(mean(x)) / (1-mean(x))) / priorqk
+
+	return(BF)
+
+
+
+
+
+
+
+
+def ESS(trace, sampleInterval):
+	"""
+    Function to compute the ESS of trace (wrapper of ESS_V3_cython)
+    Arguments:
+        - trace: any object containing a list of floats or integers that 
+        can be coerced into a list
+        The trace SHOULD NOT contain the burn in 
+
+        - sampleInterval: the time between two steps in the trace
+
+    This code is based on two functions from Beast2 (see source code on Github):
+        - calcStats in beast.util.LogAnalyser (https://github.com/CompEvol/beast2/blob/master/src/beast/util/LogAnalyser.java)
+        - ACT in beast.core.util.ESS (https://github.com/CompEvol/beast2/blob/master/src/beast/core/util/ESS.java)
+	"""
+
+    # Change the type of trace because this function works on lists
+	if type(trace) == list:
+		trace = np.array(trace)
+	else:
+		trace = np.array(list(trace))
+
 
 	if min(trace) == max(trace):
 		return(float('nan'))
-
 	else:
-		# sum of trace, excluding burn-in
-		sum0 = 0.0    
-
-		# Trace length
-		traceLength = len(trace)
-
-		# keep track of sums of trace(i)*trace(i_+ lag) for all lags, excluding burn-in
-		squareLaggedSums = [0.0] * MAX_LAG
-		autoCorrelation = [0.0] * MAX_LAG
-
-		for i in range(traceLength):
-			sum0 += trace[i]
-
-			# calculate mean
-			mean = sum0 / (i + 1)
-
-			# calculate auto correlation for selected lag times
-			sum1 = sum0
-			sum2 = sum0
-			for lagIndex in range(min(i + 1, MAX_LAG)):
-				#squareLaggedSums[lagIndex] = squareLaggedSums[lagIndex] + trace[i - lagIndex] * trace[i]
-				squareLaggedSums[lagIndex] += trace[i - lagIndex] * trace[i]
-				""" The following line is the same approximation as in Tracer
-				(valid since mean *(samples - lag), sum1, and sum2 are approximately the same)
-				though a more accurate estimate would be
-				autoCorrelation[lag] = m_fSquareLaggedSums.get(lag) - sum1 * sum2 """
-				#autoCorrelation[lagIndex] = squareLaggedSums[lagIndex] - (sum1 + sum2) * mean + mean * mean * (i + 1 - lagIndex)
-				#autoCorrelation[lagIndex] /= (i + 1 - lagIndex)
-				autoCorrelation[lagIndex] = (squareLaggedSums[lagIndex] - (sum1 + sum2) * mean + mean * mean * (i + 1 - lagIndex)) / (i + 1 - lagIndex)
-				sum1 -= trace[i - lagIndex]
-				sum2 -= trace[lagIndex]
-
-
-		maxLag = min(traceLength, MAX_LAG)
-		integralOfACFunctionTimes2 = 0.0
-		for lagIndex in range(maxLag):
-			if lagIndex == 0:
-				integralOfACFunctionTimes2 = autoCorrelation[0]
-			elif lagIndex % 2 == 0:
-				# fancy stopping criterion - see main comment in Tracer code of BEAST 1
-				if autoCorrelation[lagIndex - 1] + autoCorrelation[lagIndex] > 0:
-					integralOfACFunctionTimes2 += 2.0 * (autoCorrelation[lagIndex - 1] + autoCorrelation[lagIndex])
-				else:
-					# stop
-					break
-
-		# ACT
-		ACT = sampleInterval * integralOfACFunctionTimes2 / autoCorrelation[0]
-
-		# Standard Error Of The Mean
-		#stdMean = math.sqrt(integralOfACFunctionTimes2 / traceLength)
-
-		# ESS
-		ESS = traceLength / (ACT / sampleInterval)
-
-		#auto correlation time
-		return(ESS)
+		return ESS_cython2(trace, sampleInterval, MAX_LAG)

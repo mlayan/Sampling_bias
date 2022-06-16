@@ -638,8 +638,15 @@ def trimPhylogeny2(transChain, tips, ancestorsList, ancestorsCommon, rootTree):
 
 
 
-def migrationEvents(filename, matrix, protocol, regionDic, 
-	extractNewickTree = False, extractNexusTree = False, directory = None):
+def migrationEvents(
+	filename, 
+	matrix, 
+	protocol, 
+	regionDic, 
+	extractNewickTree = False, 
+	extractNexusTree = False, 
+	directory = None
+	):
 	"""
 	Function that computes the number of migration events between locations on the complete 
 	phylogeny or on the trimmed phylogeny from simulated transmission chains.
@@ -800,7 +807,12 @@ def migrationEvents(filename, matrix, protocol, regionDic,
 
 
 
-def writeNewickTree(filename, transChain, protocol, directory = None):
+def writeNewickTree(
+	filename, 
+	transChain, 
+	protocol, 
+	directory = None
+	):
 	"""
 	Function that writes the phylogenetic tree in Newick format. 
 	It is largely based on the migrationEvents function.
@@ -898,8 +910,13 @@ def writeNewickTree(filename, transChain, protocol, directory = None):
 
 
 
-def associationIndex(treeFileName, traitFileName, nShuffles, 
-	directory = None, seed = None): #, parallelize = False):
+def associationIndex(
+	treeFileName, 
+	traitFileName, 
+	nShuffles, 
+	directory = None, 
+	seed = None
+	): 
 	""""""
 	print(treeFileName)
 
@@ -927,14 +944,6 @@ def associationIndex(treeFileName, traitFileName, nShuffles,
 
 	# Compute d_AI for the trees with shuffled locations
 	random_ai = []
-	#if parallelize:
-
-	# def helperF(l):
-	# 	return(d_associationIndex(tree, l))
-
-	# with ProcessPoolExecutor() as executor:
-	# 	for result in executor.map(helperF, locations):
-	# 		random_ai.append(result)
 
 	# else:
 	for chars in locations:
@@ -956,7 +965,10 @@ def associationIndex(treeFileName, traitFileName, nShuffles,
 
 
 
-def d_associationIndex(tree, chars):
+def d_associationIndex(
+	tree, 
+	chars
+	):
 	"""
 
 	"""
@@ -1006,8 +1018,12 @@ def d_associationIndex(tree, chars):
 
 
 
-def migrationEffectiveness(fileName, directory, matrix, 
-	regionDic):
+def migrationEffectiveness(
+	fileName, 
+	directory, 
+	matrix, 
+	regionDic
+	):
 	"""
 
 	"""
@@ -1068,7 +1084,10 @@ def migrationEffectiveness(fileName, directory, matrix,
 
 
 
-def transmissionChainLength(migrant, transChain):
+def transmissionChainLength(
+	migrant, 
+	transChain
+	):
 	# Retrieve arguments 
 	indexCase = migrant['source']
 	case = migrant['case']
@@ -1098,7 +1117,10 @@ def transmissionChainLength(migrant, transChain):
 
 
 
-def getTransmissionChain(case, df):
+def getTransmissionChain(
+	case, 
+	df
+	):
 	""""""
 	# Conditions and outputs
 	descCond = (df['source'] == case) # Condition to get the offspring of ind

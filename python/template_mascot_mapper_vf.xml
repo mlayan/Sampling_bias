@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="" version="2.6">
+        
+    <data
+id="filename"
+spec="Alignment"
+name="alignment">
+                                
+                            
+    </data>
+        
+
+
+    
+
+
+    
+
+    <map name="Uniform" >beast.math.distributions.Uniform</map>
+    <map name="Exponential" >beast.math.distributions.Exponential</map>
+    <map name="LogNormal" >beast.math.distributions.LogNormalDistributionModel</map>
+    <map name="Normal" >beast.math.distributions.Normal</map>
+    <map name="Beta" >beast.math.distributions.Beta</map>
+    <map name="Gamma" >beast.math.distributions.Gamma</map>
+    <map name="LaplaceDistribution" >beast.math.distributions.LaplaceDistribution</map>
+    <map name="prior" >beast.math.distributions.Prior</map>
+    <map name="InverseGamma" >beast.math.distributions.InverseGamma</map>
+    <map name="OneOnX" >beast.math.distributions.OneOnX</map>
+    
+    <run id="mcmc" spec="MCMC" chainLength="20000000" storeEvery="2000">
+            
+        <state id="state" spec="State" storeEvery="5000">
+                    
+            <tree id="Tree.t:filename" spec="beast.evolution.tree.Tree" name="stateNode">
+                            
+                <trait id="dateTrait.t:filename" spec="beast.evolution.tree.TraitSet" traitname="date">
+                                    
+                    <taxa id="TaxonSet.filename" spec="TaxonSet">
+                                            
+                        <alignment idref="filename"/>
+                                        
+                    </taxa>
+                                
+                </trait>
+                            
+                <taxonset idref="TaxonSet.filename"/>
+                        
+            </tree>
+                    
+            <parameter id="clockRate.c:filename" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
+                    
+            <parameter id="kappa.s:filename" spec="parameter.RealParameter" lower="0.0" name="stateNode">2.0</parameter>
+                    
+            <parameter id="relativeMigrationRatesConstantBSSVS.t:filename" spec="parameter.RealParameter" dimension="0" lower="0.0" name="stateNode">1.0</parameter>
+                    
+            <parameter id="NeConstantBSSVS.t:filename" spec="parameter.RealParameter" lower="0.0" name="stateNode">1.0</parameter>
+                    
+            <stateNode id="indicatorsConstantBSSVS.t:filename" spec="parameter.BooleanParameter" dimension="0">true</stateNode>
+                    
+            <parameter id="freqParameter.s:filename" spec="parameter.RealParameter" dimension="4" lower="0.0" name="stateNode" upper="1.0">0.25</parameter>
+                
+        </state>
+            
+        <init id="RandomTree.t:filename" spec="beast.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:filename" taxa="@filename">
+                    
+            <populationModel id="ConstantPopulation0.t:filename" spec="ConstantPopulation">
+                            
+                <parameter id="randomPopSize.t:filename" spec="parameter.RealParameter" name="popSize">1.0</parameter>
+                        
+            </populationModel>
+                
+        </init>
+            
+        <distribution id="posterior" spec="util.CompoundDistribution">
+                    
+            <distribution id="prior" spec="util.CompoundDistribution">
+                            
+                <distribution id="Mascot.t:filename" spec="beast.mascot.distribution.Mascot" tree="@Tree.t:filename">
+                                    
+                    <dynamics id="ConstantBSSVS.t:filename" spec="beast.mascot.dynamics.ConstantBSSVS" Ne="@NeConstantBSSVS.t:filename" backwardsMigration="@relativeMigrationRatesConstantBSSVS.t:filename" dimension="1" indicators="@indicatorsConstantBSSVS.t:filename">
+                                            
+                        <parameter id="migrationClockConstantBSSVS.t:filename" spec="parameter.RealParameter" estimate="false" lower="0.0" name="migrationClock">1.0</parameter>
+                                            
+                        <typeTrait id="typeTraitSet.t:filename" spec="mascot.util.InitializedTraitSet" traitname="type">
+                                                    
+                            <taxa id="TaxonSet.1" spec="TaxonSet" alignment="@filename"/>
+                                                
+                        </typeTrait>
+                                        
+                    </dynamics>
+                                    
+                    <structuredTreeIntervals id="StructuredTreeIntervals.t:filename" spec="beast.mascot.distribution.StructuredTreeIntervals" tree="@Tree.t:filename"/>
+                                
+                </distribution>
+                            
+                <prior id="NeConstantBSSVSPrior.t:filename" name="distribution" x="@NeConstantBSSVS.t:filename">
+                                    
+                    <Exponential id="Exponential.5" name="distr">
+                                            
+                        <parameter id="RealParameter.8" spec="parameter.RealParameter" lower="0.0" name="mean" upper="0.0">1.0</parameter>
+                                        
+                    </Exponential>
+                                
+                </prior>
+                            
+                <prior id="ClockPrior.c:filename" name="distribution" x="@clockRate.c:filename">
+
+                    <LogNormal id="LogNormalDistributionModel.1" name="distr">
+                                            
+                        <parameter id="RealParameter.9" spec="parameter.RealParameter" estimate="false" name="M">0.0</parameter>
+                                            
+                        <parameter id="RealParameter.10" spec="parameter.RealParameter" estimate="false" lower="0.0" name="S" upper="5.0">4.0</parameter>
+                                        
+                    </LogNormal>
+                                                                    
+                </prior>
+                            
+                <prior id="FrequenciesPrior.s:filename" name="distribution" x="@freqParameter.s:filename">
+                                    
+                    <Uniform id="Uniform.3" name="distr"/>
+                                
+                </prior>
+                            
+                <prior id="KappaPrior.s:filename" name="distribution" x="@kappa.s:filename">
+                                    
+                    <LogNormal id="LogNormalDistributionModel.0" name="distr">
+                                            
+                        <parameter id="RealParameter.1" spec="parameter.RealParameter" estimate="false" name="M">1.0</parameter>
+                                            
+                        <parameter id="RealParameter.2" spec="parameter.RealParameter" estimate="false" name="S">1.25</parameter>
+                                        
+                    </LogNormal>
+                                
+                </prior>
+                            
+                <prior id="relativeMigrationRatesConstantBSSVSPrior.t:filename" name="distribution" x="@relativeMigrationRatesConstantBSSVS.t:filename">
+                                    
+                    <Exponential id="Exponential.3" name="distr">
+                                            
+                        <parameter id="RealParameter.6" spec="parameter.RealParameter" lower="0.0" name="mean" upper="0.0">1.0</parameter>
+                                        
+                    </Exponential>
+                                
+                </prior>
+                            
+                <prior id="nonZeroRatePrior.t:filename" name="distribution">
+                                    
+                    <x id="sumNonZeroRates.t:filename" spec="util.Sum">
+                                            
+                        <arg idref="indicatorsConstantBSSVS.t:filename"/>
+                                        
+                    </x>
+                                    
+                    <distr id="Poisson.0" spec="beast.math.distributions.Poisson" offset="0.0">
+                                            
+                        <parameter id="RealParameter.5" spec="parameter.RealParameter" lower="0.0" name="lambda" upper="0.0">1.0</parameter>
+                                        
+                    </distr>
+                                
+                </prior>
+                        
+            </distribution>
+                    
+            <distribution id="likelihood" spec="util.CompoundDistribution" useThreads="true">
+                            
+                <distribution id="treeLikelihood.filename" spec="ThreadedTreeLikelihood" data="@filename" tree="@Tree.t:filename">
+                                    
+                    <siteModel id="SiteModel.s:filename" spec="SiteModel">
+                                            
+                        <parameter id="mutationRate.s:filename" spec="parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
+                                            
+                        <parameter id="gammaShape.s:filename" spec="parameter.RealParameter" estimate="false" name="shape">1.0</parameter>
+                                            
+                        <parameter id="proportionInvariant.s:filename" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                                            
+                        <substModel id="hky.s:filename" spec="HKY" kappa="@kappa.s:filename">
+                                                    
+                            <frequencies id="estimatedFreqs.s:filename" spec="Frequencies" frequencies="@freqParameter.s:filename"/>
+                                                
+                        </substModel>
+                                        
+                    </siteModel>
+                                    
+                    <branchRateModel id="StrictClock.c:filename" spec="beast.evolution.branchratemodel.StrictClockModel" clock.rate="@clockRate.c:filename"/>
+                                
+                </distribution>
+                        
+            </distribution>
+                
+        </distribution>
+            
+        <operator id="StrictClockRateScaler.c:filename" spec="ScaleOperator" parameter="@clockRate.c:filename" weight="3.0"/>
+            
+        <operator id="strictClockUpDownOperator.c:filename" spec="UpDownOperator" scaleFactor="0.75" weight="3.0">
+                    
+            <up idref="clockRate.c:filename"/>
+                    
+            <down idref="Tree.t:filename"/>
+                
+        </operator>
+            
+        <operator id="KappaScaler.s:filename" spec="ScaleOperator" parameter="@kappa.s:filename" scaleFactor="0.5" weight="0.1"/>
+            
+        <operator id="MascotTreeScaler.t:filename" spec="ScaleOperator" scaleFactor="0.5" tree="@Tree.t:filename" weight="3.0"/>
+            
+        <operator id="MascotTreeRootScaler.t:filename" spec="ScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:filename" weight="3.0"/>
+            
+        <operator id="MascotUniformOperator.t:filename" spec="Uniform" tree="@Tree.t:filename" weight="30.0"/>
+            
+        <operator id="MascotSubtreeSlide.t:filename" spec="SubtreeSlide" tree="@Tree.t:filename" weight="15.0"/>
+            
+        <operator id="MascotNarrow.t:filename" spec="Exchange" tree="@Tree.t:filename" weight="15.0"/>
+            
+        <operator id="MascotWide.t:filename" spec="Exchange" isNarrow="false" tree="@Tree.t:filename" weight="3.0"/>
+            
+        <operator id="MascotWilsonBalding.t:filename" spec="WilsonBalding" tree="@Tree.t:filename" weight="3.0"/>
+            
+        <operator id="relativeMigrationRatesConstantBSSVSScaler.t:filename" spec="ScaleOperator" parameter="@relativeMigrationRatesConstantBSSVS.t:filename" weight="3.0"/>
+            
+        <operator id="NeConstantBSSVSScaler.t:filename" spec="ScaleOperator" parameter="@NeConstantBSSVS.t:filename" weight="3.0"/>
+            
+        <operator id="indicatorFlip.t:filename" spec="BitFlipOperator" parameter="@indicatorsConstantBSSVS.t:filename" weight="3.0"/>
+            
+        <operator id="FrequenciesExchanger.s:filename" spec="DeltaExchangeOperator" delta="0.01" weight="0.1">
+                    
+            <parameter idref="freqParameter.s:filename"/>
+                
+        </operator>
+            
+        <logger id="tracelog" spec="Logger" fileName="filename.log.txt" logEvery="2000" model="@posterior" sanitiseHeaders="true" sort="smart">
+                    
+            <log idref="posterior"/>
+                    
+            <log idref="likelihood"/>
+                    
+            <log idref="prior"/>
+                    
+            <log idref="treeLikelihood.filename"/>
+                    
+            <log id="TreeHeight.t:filename" spec="beast.evolution.tree.TreeHeightLogger" tree="@Tree.t:filename"/>
+                    
+            <log idref="clockRate.c:filename"/>
+                    
+            <log idref="kappa.s:filename"/>
+                    
+            <log idref="Mascot.t:filename"/>
+                    
+            <log idref="ConstantBSSVS.t:filename"/>
+                    
+            <log idref="sumNonZeroRates.t:filename"/>
+                    
+            <log idref="freqParameter.s:filename"/>
+
+             <log spec="beast.mascot.logger.MigrationCountLogger" mappedMascot="@structuredTredaslog.t:filename"/>
+
+        </logger>
+            
+        <logger id="screenlog" spec="Logger" logEvery="2000" sanitiseHeaders="true">
+                    
+            <log idref="posterior"/>
+                    
+            <log idref="likelihood"/>
+                    
+            <log idref="prior"/>
+                
+        </logger>
+
+        <logger id="typedTreelog.t:filename" spec="Logger" fileName="filename.trees.txt" logEvery="2000" mode="tree">
+
+            <log id="structuredTredaslog.t:filename" spec="beast.mascot.distribution.MappedMascot" dynamics="@ConstantBSSVS.t:filename" tree="@Tree.t:filename">
+                
+                <structuredTreeIntervals idref="StructuredTreeIntervals.t:filename"/>
+            
+            </log>
+        
+        </logger>
+            
+        <operatorschedule id="OperatorSchedule" spec="OperatorSchedule"/>
+        
+    </run>
+     
+</beast>
