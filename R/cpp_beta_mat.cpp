@@ -128,3 +128,26 @@ NumericMatrix cpp_beta_adj(IntegerVector population, NumericVector beta, Numeric
     
 }
   
+  
+//////////////////////////////////////////////////////////////////////////////////
+// [[Rcpp::export]]
+NumericMatrix cpp_beta_radiation(IntegerVector population, double beta, NumericMatrix mobility,
+                                 double normCons = 1, double connection_strength = 1) {
+  
+  int n_patch = population.size();
+  NumericMatrix beta_matrix(n_patch, n_patch);
+
+  for (int i = 0; i < n_patch; ++i) {
+    for (int j = 0;j < n_patch; ++j) {
+      if (i != j) {
+        beta_matrix(i,j) = beta * connection_strength * mobility(i,j) * normCons /  population[j];
+      } else {
+        beta_matrix(i,j) = beta * connection_strength * mobility(i,j) /  population[j];
+      }
+    }
+  }
+  
+  
+  return beta_matrix;
+  
+}

@@ -16,8 +16,8 @@ library(tidyverse)
 library(lubridate)
 library(ggpubr)
 
-setwd("X:/Real_data/rabies/")
-source("X:/R_Functions/plot_results.R")
+setwd("rabies/")
+source("../R/plot_results.R")
 
 isle_colors = c("cornflowerblue", "gold", "orange", "red", "forestgreen", "purple")
 names(isle_colors) = c("Catanduanes", "Cebu", "Luzon", "Mindanao", "NegrosOriental", "OrientalMindoro")
@@ -27,66 +27,6 @@ mrst = max(read.table("data/tohma_dates.txt", header = T)$Date)
 model_col = c("#00979c", "mediumorchid4", "mediumorchid2", "#883000")
 names(model_col) = c("DTA", "BASTA", "BASTA DEMES", "MASCOT")
 
-#############################################################
-# Compare root height
-#############################################################
-ageroots = data.frame()
-for (f in list.files("figures/", "ageroot_", full.names = T)) {
-  ageroots = bind_rows(ageroots, read.table(f, header = T, sep = "\t"))
-}
-
-ageroots = ageroots %>%
-  mutate(model = factor(model, c("dta", "basta", "mascot"), c("DTA", "BASTA", "MASCOT")))
-
-ageroots_ss = ageroots %>%
-  group_by(model) %>%
-  summarise(
-    median = median(ageRoot),
-    hpd_97_5 = hpd(ageRoot, conf = 0.95, b = "upper"),
-    hpd_2_5 = hpd(ageRoot, conf = 0.95, b = "lower")
-    )
-
-ggplot(ageroots, aes(x = model, y = ageRoot, group = model, fill = model), col = "grey20") +
-  geom_violin(alpha = 0.5) +
-  geom_pointrange(data=ageroots_ss, aes(x = model, y = median, ymin = hpd_97_5, ymax = hpd_2_5), col = "grey20") +
-  scale_fill_manual(values=model_col) +
-  theme_light() +
-  theme(legend.position = "none") +
-  labs(x = "", y = "Root age", fill = "")
-ggsave("figures/ageroot.pdf", width = 3, height = 3)
-
-
-#############################################################
-# Compare genetic parameters
-#############################################################
-geneticParams = data.frame()
-for (f in list.files("figures/", "geneticparams_", full.names = T)) {
-  geneticParams = bind_rows(geneticParams, read.table(f, header = T, sep = "\t"))
-}
-
-geneticParams = geneticParams %>%
-  mutate(model = factor(model, c("dta", "basta", "mascot"), c("DTA", "BASTA", "MASCOT")))
-
-geneticParams_ss = geneticParams %>%
-  group_by(model, parameter) %>%
-  summarise(
-    median = median(value),
-    hpd_97_5 = hpd(value, conf = 0.95, b = "upper"),
-    hpd_2_5 = hpd(value, conf = 0.95, b = "lower")
-  ) %>%
-  filter(parameter %in% c("gammaShape", "kappa", "ucldMean", "ucldStdev"))
-
-geneticParams %>%
-  filter(parameter %in% c("gammaShape", "kappa", "ucldMean", "ucldStdev")) %>%
-  ggplot(., aes(x = model, y = value, group = model, fill = model), col = "grey20") +
-  facet_wrap(.~parameter, ncol = 2, scales = "free_y") +
-  geom_violin(alpha = 0.5, scale = "width") +
-  geom_pointrange(data=geneticParams_ss, aes(x = model, y = median, ymin = hpd_97_5, ymax = hpd_2_5), col = "grey20") +
-  scale_fill_manual(values=model_col) +
-  theme_light() +
-  theme(legend.position = "none") +
-  labs(x = "", y = "Median (95% HPD)", fill = "")
-ggsave("figures/geneticparams.pdf", width = 8, height = 8)
 
 #############################################################
 # Compare lineages identified 
@@ -99,7 +39,6 @@ getLineageSupport = function(tree, name, t1, t2) {
   t = tree@phylo$tip.label[offspring(tree, t)]
   t = sort(t[!is.na(t)])
   t_tree = drop.tip(tree, tree@phylo$tip.label[!tree@phylo$tip.label %in% t])
-  write.beast(t_tree, paste0(name, ".nex"))
   list(p = p_support, taxa = t)
 }
 
@@ -178,29 +117,7 @@ for (m in c("basta", "dta", "mascot")) {
   treeplot = ggarrange(treeplot, labels = lab[m])
 
   ggsave(paste0("figures/mcc_", m, ".pdf"), treeplot, height = 7, width = 7)
-  ggsave(paste0("figures/mcc_", m, ".png"), treeplot, height = 7, width = 7)
-   
-  # Node posterior support
-  node_posterior = tree@data %>%
-    mutate(node = as.numeric(node), posterior = as.numeric(posterior)) %>%
-    filter(node > tree@phylo$Nnode+1) %>%
-    ggplot(., aes(x = factor(trunc(posterior*10)/10))) +
-      geom_bar() +
-      theme_light() +
-    labs(x = "Posterior", y = "Count")
-  ggsave(paste0("figures/posterior_", m, ".pdf"), node_posterior, height = 5, width = 5)
-  
-  # Node location posterior support
-  node_location_post = tree@data %>%
-    mutate(node = as.numeric(node)) %>%
-    filter(node > tree@phylo$Nnode+1) %>%
-    ggplot(., aes(x = location.prob)) +
-    geom_histogram(binwidth = 0.1, colour = "grey50", fill = "white") +
-    theme_light() +
-    scale_x_continuous(breaks = seq(0,1,0.1), limits = c(-0.05,1.05)) + #, limits = c(-0.1,1.1)) +
-    labs(x = "Location posterior", y = "Count")
-  ggsave(paste0("figures/posterior_location_", m, ".pdf"), node_posterior, height = 5, width = 5)
-  
+
 }
 
 #############################################################
@@ -219,30 +136,6 @@ outputs = data.frame()
 for (f in list.files("figures/", "output_", full.names = T)) {
   outputs = bind_rows(outputs, read.table(f, header = T, sep = "\t"))
 }
-
-
-outputs %>%
-  filter(grepl("bssvs_nMigration", parameter)) %>%
-  mutate(
-    source = gsub("bssvs_nMigration_|_[a-zA-Z]+$", "", parameter), 
-    destination = gsub("^.*_", "", parameter),
-    X50 = ifelse(BF < 3, NA, X50),
-    X2_5_hpd = ifelse(BF < 3, NA, X2_5_hpd),
-    X97_5_hpd = ifelse(BF < 3, NA, X97_5_hpd),
-    supp = ifelse(BF < 3, "NS", "")
-  ) %>%
-  mutate(model = factor(model, c("dta", "basta", "basta_demes", "mascot"), names(model_col))) %>%
-  ggplot(., aes(x = model, y = X50, ymax = X97_5_hpd, ymin = X2_5_hpd, col = model, label = supp)) +
-  geom_pointrange(size = 1, fatten = 1.2) +
-  geom_text(aes(y = 0), size = 3) +
-  facet_grid(source~destination, switch = "y", scales = "free_y") +
-  scale_color_manual(values = model_col) +
-  theme_light() +
-  theme(axis.text.x = element_blank()) +
-  labs(x = "", y = "Total migration counts (median, 95% HPD)", col = "")
-
-ggsave("figures/total_migration_counts.pdf", height = 7, width = 9)
-
 
 M = outputs %>%
   filter(grepl("bssvs_nMigration", parameter))

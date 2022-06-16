@@ -35,7 +35,7 @@ write.seq <- function(case, index.case, snp, error.rate = 0) {
 
 
 # HKY SUBSTITUTION MODEL
-HKY_model <- function(sim, ref, mu, kappa, root.date, simulationNb = NULL, coords = NULL) {
+HKY_model <- function(sim, ref, mu, kappa, root.date, directory, simulationNb = NULL, coords = NULL) {
   
   #################################################
   ## PACKAGES AND PARAMETERS
@@ -171,7 +171,11 @@ HKY_model <- function(sim, ref, mu, kappa, root.date, simulationNb = NULL, coord
                                                        prob = p_t[x, ]))
       
       # Store the changes
-      loc <- which(newSequence != ref)                # Store SNPs according to the reference genome which enables to get the SNPs of the infector sequence
+      # Since simulated epidemics are large, the size of sequence alignments could easily overload the R cache. 
+      # Thus, we took a similar approach as the R package SEEDY (doi: 10.1371/journal.pone.0129745) by storing 
+      # SNPs that differ from the reference genome in list objects instead of storing whole genome sequences.
+      # Store SNPs according to the reference genome which enables to get the SNPs of the infector sequence
+      loc <- which(newSequence != ref)                
       nuc <- newSequence[loc]
       d.dist <- length(which(newSequence != source))  # Compute the number of new SNPs compared to the source sequence 
       
@@ -215,7 +219,7 @@ HKY_model <- function(sim, ref, mu, kappa, root.date, simulationNb = NULL, coord
                                     samp.dates = samp.dates, short.names = short.names)
   }
   
-  write.table(continuous_traits, paste0('simulation', simulationNb, "/files/sim", simulationNb, "_metadata.txt"),
+  write.table(continuous_traits, paste0(directory, "/sim", simulationNb, "_metadata.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
   # Write sequences 

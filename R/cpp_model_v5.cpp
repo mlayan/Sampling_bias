@@ -141,6 +141,7 @@ List cpp_model(IntegerVector population, double dog_ratio, NumericVector beta,
   NumericVector proba_patch(n_patch);
   IntegerVector pop(n_patch);
   NumericMatrix foi(n_patch, n_patch);
+  int duration = 0;
   
   for (int curr_time = 1; curr_time < time_max; ++curr_time) {
     
@@ -271,21 +272,31 @@ List cpp_model(IntegerVector population, double dog_ratio, NumericVector beta,
       exp(patch, curr_time) = exp(patch, curr_time - 1) + s_to_e - e_to_i - exp_d(patch, curr_time);
       exp_s(patch, curr_time) = s_to_e;
       inf(patch, curr_time) = inf_ids[patch][curr_time].size();
+      
+      // Update duration
+      if (sum(inf(_, curr_time)) != 0 && sum(exp(_, curr_time)) != 0) duration = curr_time + 1;
+      
     }
   }
   
   ////////////////////////////////////////////////
   // Outputs
-  List dynamics = List::create(Named("sus") = sus, Named("exp") = exp, Named("inf") = inf, 
-                                     Named("inc") = inf_s, Named("exp_s") = exp_s); 
-  List sourcing = List::create(Named("data") = data, Named("inf_ids") = inf_ids);
+  List dynamics = List::create(Named("sus") = sus, 
+                               Named("exp") = exp, 
+                               Named("inf") = inf, 
+                               Named("inc") = inf_s, 
+                               Named("exp_s") = exp_s); 
+  
+  List sourcing = List::create(Named("data") = data, 
+                               Named("inf_ids") = inf_ids);
   int epi_size = sum(inf_s);
   
   return List::create(Named("dynamics") = dynamics,
                       Named("sourcing") = sourcing,
                       Named("size") = epi_size, 
                       Named("foi") = foi, 
-                      Named("beta_mat") = beta_matrix);
+                      Named("beta_mat") = beta_matrix, 
+                      Named("duration") = duration);
 
 }
 
