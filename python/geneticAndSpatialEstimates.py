@@ -22,8 +22,7 @@ from itertools import takewhile
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-#from scipy.stats import kstest
-#from arviz import ess
+from scipy.stats import kstest
 
 ## Import custom functions
 from simulatedTrees import getAncestors
