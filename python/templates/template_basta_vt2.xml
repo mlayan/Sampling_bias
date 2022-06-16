@@ -1,0 +1,151 @@
+<beast version='2.0' namespace='beast.evolution.alignment:beast.core:beast.core.parameter:beast.evolution.tree:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood:beast.evolution.tree:beast.math.distributions:multitypetreeVolz.distributions:multitypetreeVolz.operators:multitypetreeVolz.util'>
+
+
+	<alignment spec="beast.evolution.alignment.Alignment" id="alignment1" dataType="nucleotide">
+	</alignment>
+
+	<typeTraitSet id="typeTraitSet" spec="TraitSet" traitname="type">
+		<taxa spec='TaxonSet' alignment='@alignment1'/>
+	 </typeTraitSet>
+
+	<timeTraitSet spec='TraitSet' id='timeTraitSet' traitname="date-forward">   
+		<taxa spec='TaxonSet' alignment='@alignment1'/>
+	</timeTraitSet>
+
+
+	<!-- Substitution model (HKY) -->
+	<siteModel spec="SiteModel" id="siteModel">
+		<mutationRate spec='RealParameter' id="mutationRate" value="1.0"/>
+		<substModel spec="HKY">
+			<kappa spec='RealParameter' id="hky.kappa" value="2.0"/>
+			<frequencies estimate="true" spec='Frequencies'>
+				<frequencies spec='RealParameter' id="hky.freq" value="0.25 0.25 0.25 0.25"/>
+			</frequencies>
+		</substModel>
+	</siteModel>
+
+	<!-- Migration model -->
+	<migrationModelVolz spec='MigrationModelVolz' nTypes="5" id='migModel'>
+		<rateMatrix spec='RealParameter' value="1.0" dimension="10" id="rateMatrix"/>
+		<popSizes spec='RealParameter' value="1.0" dimension="5" id="popSizes"/>
+	</migrationModelVolz>
+
+	<!-- Parameter priors -->
+	<input spec='CompoundDistribution' id='parameterPriors'>
+		<distribution spec='beast.math.distributions.Prior' x="@mutationRate">
+			<distr M='0.0' S='4.0' spec='LogNormalDistributionModel' />
+<!-- 			<distr lower="0.0" offset="0.0" upper="1000000000000000000" spec="beast.math.distributions.Uniform"/> -->
+		</distribution>
+
+		<distribution spec='beast.math.distributions.Prior' x="@hky.freq">
+			<distr lower="0.0" offset="0.0" upper="1.0" spec="beast.math.distributions.Uniform"/>
+		</distribution>
+
+		<distribution spec='beast.math.distributions.Prior' x="@hky.kappa">
+			<distr spec='LogNormalDistributionModel' M="1" S="1.25"/>
+		</distribution>
+
+		<distribution spec='beast.math.distributions.Prior' x="@rateMatrix">
+			<distr spec='Exponential'/>
+			<!--distr spec="LogNormalDistributionModel"  M="0.0" S="8.0"/-->
+		</distribution>
+
+		<distribution spec='beast.math.distributions.Prior' x="@popSizes">
+			<distr spec='Exponential'/>
+			<!--distr spec="LogNormalDistributionModel"  M="0.0" S="4.0"/-->
+		</distribution>
+	</input>
+
+	<!-- Probability of sequence data given tree  -->
+	<input spec='TreeLikelihood' id="treeLikelihood1">
+		<data idref="alignment1"/>
+		<tree idref="tree"/>
+		<siteModel idref='siteModel'/>   
+	</input>
+
+
+	<!-- Probability of tree given migration rates and population sizes -->
+	<input spec='StructuredCoalescentTreeDensityVolz' id='treePrior'>
+		<multiTypeTreeVolz idref="tree"/>
+		<migrationModelVolz idref="migModel"/>
+	</input>
+
+	<run spec="MCMC" id="mcmc" chainLength="300000" storeEvery="1000">
+
+		<!-- initialize tree at random according to StCoal  -->
+		<init spec='StructuredCoalescentMultiTypeTreeVolz' id='tree'>
+			<migrationModelVolz spec='MigrationModelVolz' nTypes="5">
+				<rateMatrix spec='RealParameter' value="1.0" dimension="10"/>
+				<popSizes spec='RealParameter' value="1.0" dimension="5"/>
+			</migrationModelVolz>
+			<trait idref='typeTraitSet'/>
+			<trait idref='timeTraitSet'/>
+		</init>
+
+		<state>
+			<stateNode idref="tree"/>
+			<stateNode idref="rateMatrix"/>
+			<stateNode idref="popSizes"/>
+			<stateNode idref="mutationRate"/>
+			<stateNode idref="hky.kappa"/>
+			<stateNode idref="hky.freq"/>
+		</state>
+
+		<distribution spec='CompoundDistribution' id='posterior'>
+			<distribution idref="treeLikelihood1"/>
+			<distribution idref='treePrior'/>
+			<distribution idref="parameterPriors"/>
+		</distribution>
+
+
+		<!-- parameter scaling operators -->
+		<operator spec='ScaleOperator' id='RateScaler' parameter="@rateMatrix" scaleFactor="0.8" weight="3">
+		</operator>
+		<operator spec="ScaleOperator" id="PopSizeScaler" parameter="@popSizes" degreesOfFreedom="1" scaleFactor="0.8" weight="3"/>
+		<operator spec="ScaleOperator" id="muRateScaler" parameter="@mutationRate" scaleFactor="0.8" weight="0.1"/>
+		<operator spec='ScaleOperator' id='kappaScaler' parameter="@hky.kappa" scaleFactor="0.8" weight="0.1">
+		</operator>
+		<operator spec="DeltaExchangeOperator" id="freqExchanger" parameter="@hky.freq" delta="0.01" weight="0.1"/>
+
+		<!-- Multi-type tree operators -->
+		<operator spec='TypedSubtreeExchangeVolz' id='STX' weight="10" multiTypeTree="@tree" migrationModel="@migModel"/>
+		<operator spec="TypedWilsonBaldingVolz" id="TWB" weight="10" multiTypeTree="@tree" migrationModel="@migModel" alpha="0.2"/>
+		<operator spec="MultiTypeUniformVolz" id="MTU" weight="10" multiTypeTree="@tree" includeRoot="true" rootScaleFactor="0.9"/>
+		<operator spec="MultiTypeTreeScaleVolz" id="MTTS2" weight="10" multiTypeTree="@tree" scaleFactor="0.98" useOldTreeScaler="true"/>
+
+		<!-- Loggers -->
+		<logger logEvery="1000" fileName="filename.log.txt">
+			<model idref='posterior'/>
+			<log idref="posterior"/>
+			<log idref="treeLikelihood1"/>
+			<log idref="parameterPriors"/>
+			<log spec='TreePriorLoggerVolz' structuredCoalescentTreeDensityVolz='@treePrior'/>
+			<log spec='TreeRootTypeLoggerVolz' structuredCoalescentTreeDensityVolz='@treePrior'/>
+			<!--log idref="rateMatrix"/>
+			<log idref="popSizes"/>
+			<log idref="rateMatrixFlags"/-->
+			<log spec='MigrationModelLoggerVolz' migrationModel='@migModel'/>
+			<log spec='MigrationCountsLoggerVolz' density='@treePrior'/>
+			<log idref="mutationRate"/>
+			<log idref="hky.kappa"/>
+			<log idref="hky.freq"/>
+		</logger>
+
+		<!-- Loggers-->
+		<logger logEvery="10000" fileName="filename.trees.txt" mode="tree">
+			<log idref="treePrior"/>
+		</logger>
+
+
+		<logger logEvery="1000">
+			<model idref='posterior'/>
+			<log idref="posterior"/>
+			<log idref="parameterPriors"/>
+			<log idref="treeLikelihood1"/>
+			<log spec='TreePriorLoggerVolz' structuredCoalescentTreeDensityVolz='@treePrior'/>
+			<log idref="mutationRate"/>
+			<ESS spec='ESS' name='log' arg="@rateMatrix"/>
+		</logger>
+
+	</run>
+</beast>

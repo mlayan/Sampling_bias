@@ -67,4 +67,3 @@ XML, log files, and MCC trees are available in `rabies`. Log files and tree post
 We also reanalyzed a dataset of SARS-CoV-2 genomes from its early spread in the world ([Lemey et al., 2020](https://doi.org/10.1038/s41467-020-18877-9)).
 
 XML, log files, and MCC trees are available in `sars_cov_2`. Log files and tree posterior distributions were analyzed using the Jupyter notebook and then the results were ploted using the R script in `sars_cov_2`.
-

@@ -21,12 +21,11 @@ from concurrent.futures import ProcessPoolExecutor
 import pandas as pd
 
 ## Import custom functions
-sys.path.append('/python/')
+sys.path.append('python/')
 from simulatedTrees import *
 
 ## Directory
-cond = 'mig' + str(sys.argv[1])
-directory = "../" + cond
+directory = str(sys.argv[1])    # "3demes" or "7demes" 
 os.chdir(directory)
 
 ## Region dictionary

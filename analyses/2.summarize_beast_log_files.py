@@ -18,7 +18,7 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 
 ## Import custom functions
-sys.path.append('/python/')
+sys.path.append('python/')
 from geneticAndSpatialEstimates import *
 
 ###############################################
@@ -27,8 +27,7 @@ from geneticAndSpatialEstimates import *
 runType = "dta"
 
 ## Directory
-cond = 'mig' + str(sys.argv[1])
-directory = "../" + cond
+directory = sys.argv[1]     # "3demes" or "7demes"
 os.chdir(directory)
 
 # Dictionary of the regions
