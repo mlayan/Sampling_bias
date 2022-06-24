@@ -23,7 +23,10 @@ The human population data, the inferred mobility matrix, the Moroccan shapefiles
 Two simulation frameworks were tested: 
 - `3demes` that corresponds to epidemics across 3 Moroccan demes/regions,
 - `7demes` that corresponds to epidemics across 7 Moroccan demes/regions. 
-In both frameworks, approximatively 1% of infection events happen between demes/regions. Simulations can be launched using the `R` scripts in the `generate` subfolders of `3demes` and `7demes`. This script depends on the following R libraries: `dplyr`, `Rcpp`, `seqinr`, `doParallel`, `doRNG`, and `foreach`. Simulated transmission chains, fasta files and traits files (location of the sampled sequences) are generated and stored in the following subfolders: `3demes/simulation1/files` or `7demes/simulation1/files`.
+
+In both frameworks, approximatively 1% of infection events happen between demes/regions. 
+
+Simulations can be launched using the `R` scripts in the `generate` subfolders of `3demes` and `7demes`. This script depends on the following R libraries: `dplyr`, `Rcpp`, `seqinr`, `doParallel`, `doRNG`, and `foreach`. Simulated transmission chains, fasta files and traits files (location of the sampled sequences) are generated and stored in the following subfolders: `3demes/simulation1/files` or `7demes/simulation1/files`.
 
 ### XML generation
 XML files are generated using an in-house python module based on the `lxml` python module and tailored BEAST XML template files. The python module and templates files are available in `python` and one can use the Jupyter notebook in `generate_xml` to generate XML files from simulated data and template files. XML files are stored in `3demes/simulation1/"BEAST_model"` or `7demes/simulation1/"BEAST_model"`. `"BEAST_model"` subfolders corresponds to the BEAST models tested in the original analysis:
