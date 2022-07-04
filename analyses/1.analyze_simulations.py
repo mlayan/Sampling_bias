@@ -8,11 +8,6 @@ ANALYZE SIMULATION FILES
 - Compute association index of the tree 
 """
 
-# Description  
-__author__ = 'Maylis Layan'
-__creation_date__ = '2020-05-06' 
-__last_update__ = '2020-05-'
-
 # Import libraries
 import os
 import sys
@@ -63,7 +58,7 @@ def helperF(f,p,d):
 
 
 # Get summary tables for each Beast run
-with ProcessPoolExecutor() as executor:
+with ProcessPoolExecutor(max_workers=10) as executor:
     results = []
     for result in executor.map(helperF, logFiles, protocols, directories):
         results.append(result)

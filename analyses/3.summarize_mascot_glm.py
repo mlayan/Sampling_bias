@@ -5,11 +5,6 @@
 ANALYZE BEAST LOG FILES
 """
 
-# Description  
-__author__ = 'Maylis Layan'
-__creation_date__ = '2020-02-28' 
-__last_update__ = '2020-05-13'
-
 # Import libraries
 import os
 import sys
@@ -79,7 +74,7 @@ def helperF(f,d):
     	regionDict
         ))
 
-with ProcessPoolExecutor(max_workers=12) as executor:
+with ProcessPoolExecutor(max_workers=10) as executor:
     out = []
     
     for result in executor.map(helperF, logFiles, directories):

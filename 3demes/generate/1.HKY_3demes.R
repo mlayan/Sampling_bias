@@ -13,7 +13,8 @@ rm(list = ls())
 setwd("3demes")
 
 # Arguments 
-# Give a value between 1 and 5 to determine which seed should be used 
+# Give a value between 1 and 5 to determine which seed should be used
+# Give the number of cores to parallelize upon
 args <- commandArgs(trailingOnly=T)
 if (length(args) == 0) {
   stop("Need arguments!")
@@ -134,7 +135,7 @@ inf_period_dist <- proba/sum(proba)
 #-----------------------------------------------------------
 # Simulation
 #-----------------------------------------------------------
-registerDoParallel(cores = 10)
+registerDoParallel(cores = args[2])
 
 # Set the range of the simulation index
 seed <- as.integer(Sys.time() + Sys.getpid())

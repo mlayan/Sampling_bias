@@ -149,7 +149,7 @@ inf_period_dist <- proba/sum(proba)
 #-----------------------------------------------------------
 # Simulation
 #-----------------------------------------------------------
-registerDoParallel(cores = 10)
+registerDoParallel(cores = args[2])
 
 # Set the range of the simulation index
 seed <- as.integer(Sys.time() + Sys.getpid())

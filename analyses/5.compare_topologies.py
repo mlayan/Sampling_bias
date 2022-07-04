@@ -46,7 +46,7 @@ def helperF(t, d):
     return(compareBeasttoSimulation(t, simulationFramework, d, *models))
 
 # Perform linear regressions
-with ProcessPoolExecutor(max_workers=12) as executor : 
+with ProcessPoolExecutor(max_workers=10) as executor : 
     out = []
     for result in executor.map(helperF, treeList, dirList):
         out.append(result)

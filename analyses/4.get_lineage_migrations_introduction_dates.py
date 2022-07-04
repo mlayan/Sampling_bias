@@ -5,11 +5,6 @@
 COMPUTE ADJUSTED BAYES FACTORS
 """
 
-# Description  
-__author__ = 'Maylis Layan'
-__creation_date__ = '2020-10-22' 
-__last_update__ = '2020-'
-
 # Import libraries
 import os
 import sys
@@ -64,7 +59,7 @@ for root, subDirs, files in os.walk('.'):
 def helperF(f,d):
 	return(treePosteriorDistributionStatistics(f, d, beastModel, regions))
 
-with ProcessPoolExecutor(max_workers=12) as executor:
+with ProcessPoolExecutor(max_workers=10) as executor:
 	
 	lineage = []
 	introduction = []
