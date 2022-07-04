@@ -75,7 +75,7 @@ introduction_pd = pd.concat(introduction, axis = 0).reset_index(drop = True)
 
 # Write the dataframe
 if beastModel == "files": beastModel = 'sim'
-lineage_pd.to_csv(directory + 'analyses/transition_matrices_' + beastModel + '_' + nSeq + '.txt', 
+lineage_pd.to_csv(directory + 'analyses/lineage_migration_' + beastModel + '_' + nSeq + '.txt', 
 	index = False, header = True, sep = '\t', na_rep = 'NA')
 introduction_pd.to_csv(directory + 'analyses/introduction_dates_' + beastModel + '_' + nSeq + '.txt', 
 	index = False, header = True, sep = '\t', na_rep = 'NA')
