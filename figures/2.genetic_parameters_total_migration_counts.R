@@ -357,13 +357,13 @@ p = migrationEvents %>%
   facet_grid(rows = vars(nSeq), cols=vars(protocol)) +
   geom_text(data = labels,aes(x = 0, y=y1, label = coef), inherit.aes = FALSE,
             col = "black", size = 3, hjust = 0, parse=T) +
-  scale_color_manual(values = colModels[md]) +
+  scale_color_manual(values = colModels["CTMC"]) +
   theme_light() + 
   theme(legend.position = "none") +
   labs(x = "Simulated migration events", 
        y = "Estimated migration events (median, 95%-HPD)")
 
-ggsave(paste0(directory, "/supp_figure8.png"), p, width = 10, height = 5)
+ggsave(paste0(directory, "/supp_figure7.png"), p, width = 10, height = 5)
 
 
 # Plot for the paper---------------------------------------
