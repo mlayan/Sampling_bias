@@ -72,9 +72,9 @@ All figures presented in `figures` can be reproduced using the following R scrip
 ### RABV
 To illustrate the differences between the discrete phylogeographic approaches, we reanalyzed a dataset of 233 RABV glycoprotein gene sequences isolated in the Philippines between 2004 and 2010 ([Saito et al., 2013](https://doi.org/10.1371/journal.pntd.0002144) and [Tohma et al., 2014](https://doi.org/10.1016/j.meegid.2014.01.026)).
 
-XML, log files, and MCC trees are available in `rabies`. Log files and tree posterior distributions were analyzed using the Jupyter notebook and then the results were ploted using the R script in `rabies`.
+XML, log files, and MCC trees are available in `rabies`. Log files and tree posterior distributions were analyzed using the python script and then the results were ploted using the R script in `rabies`.
 
 ### SARS-CoV-2
 We also reanalyzed a dataset of SARS-CoV-2 genomes from its early spread in the world ([Lemey et al., 2020](https://doi.org/10.1038/s41467-020-18877-9)).
 
-XML, log files, and MCC trees are available in `sars_cov_2`. Log files and tree posterior distributions were analyzed using the Jupyter notebook and then the results were ploted using the R script in `sars_cov_2`.
+XML, log files, and MCC trees are available in `sars_cov_2`. Log files and tree posterior distributions were analyzed using the python script and then the results were ploted using the R script in `sars_cov_2`.
