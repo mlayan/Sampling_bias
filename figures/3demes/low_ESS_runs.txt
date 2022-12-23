@@ -1,0 +1,3 @@
+"matrix"	"nSim"	"nSeq"	"protocol"	"model"
+"3demes"	28	500	"uniformS_10"	"mascot"
+"3demes"	46	500	"uniformS_20"	"mascot"
