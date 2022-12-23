@@ -7,8 +7,7 @@
 rm(list = ls())
 library(tidyverse)
 
-setwd("X:/")
-source("R_Functions/plot_results.R")
+source("R/plot_results.R")
 
 # ESS threshold on prior, posterior and likelihood
 threshold = 200
@@ -21,8 +20,8 @@ nSeq = as.character(c(150,500))
 
 # Create output directory if it doesn't exists
 for (directory in category) {
-  if (!dir.exists(paste0("2.Figures/", directory))) 
-    dir.create(paste0("2.Figures/", directory), recursive = T)
+  if (!dir.exists(paste0("figures/", directory))) 
+    dir.create(paste0("figures/", directory), recursive = T)
 }
 
 #############################################################
@@ -32,7 +31,7 @@ for (directory in category) {
 data = data.frame()
 
 # Directories
-dirs = paste0("HKY_", category, "/analyses/")
+dirs = paste0(category, "/analyses/")
 
 # File names
 allConds = expand.grid(runTypes, nSeq, subcategory)
@@ -60,7 +59,7 @@ for (i in dirs) {
 # Select data
 #############################################################
 for (directory in category) {
-  outputDirectory = paste0("2.Figures/", directory, "/")
+  outputDirectory = paste0("figures/", directory, "/")
   
   # Analyze ESS values
   low_ESS = data %>%
@@ -90,7 +89,7 @@ for (directory in category) {
 
   high_ESS %>%
     filter(!(model %in% "basta" & nSeq == 500)) %>%
-    write.table(., paste0(outputDirectory, '2.selected_runs.txt'), sep = "\t",
+    write.table(., paste0(outputDirectory, 'selected_runs.txt'), sep = "\t",
               row.names = FALSE, col.names = TRUE)
 
   data %>%
@@ -98,7 +97,7 @@ for (directory in category) {
     right_join(., high_ESS) %>%
     filter(ESS >= threshold | is.na(ESS)) %>%
     data.frame() %>%
-    write.table(., paste0(outputDirectory, "/2.selected_data.txt"), sep = "\t",
+    write.table(., paste0(outputDirectory, "/selected_data.txt"), sep = "\t",
                 row.names = FALSE, col.names = TRUE)
   
 }

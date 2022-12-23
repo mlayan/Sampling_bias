@@ -13,15 +13,12 @@ library(ggpubr)
 source('R/plot_results.R')
 
 runType = "7demes"
-category = paste0('HKY_', runType)
 models = c('dta', 'basta', 'mascot', 'glm')
 if (runType == "7demes") regions <- regions[1:3]
 
 # Input and output Directory
-dirFigs = ifelse(exists("subcategory"),
-                 paste0("2.Figures/", runType, "/", subcategory),
-                 paste0("2.Figures/", runType))
-dirAdjBF = paste0(category, "/analyses")
+dirAdjBF = paste0(runType, "/analyses")
+dirFigs = paste0("figures/", runType)
 
 # Colors
 colModels = c("#00979c", "#883000", "#fa7850", "darkgoldenrod1")
@@ -48,7 +45,7 @@ for (f in fileNames) {
 }
 
 # Keep only conditions with enough statistical support
-selectedRuns = read.table(paste0(dirFigs, "/2.selected_runs.txt"), 
+selectedRuns = read.table(paste0(dirFigs, "/selected_runs.txt"), 
                           header = T, sep = "\t", stringsAsFactors = F) %>%
   filter(model %in% models) %>%
   select(-matrix)
@@ -123,19 +120,19 @@ data %>%
 # relative error
 allPlots = list()
 i = 1 
-s = c("Kendall's tau", "Calibration", "Mean relative 95% HPD\nwidth", "Mean relative bias",
-      "Weighted Interval score")
+s = c("Mean relative\nbias", "Kendall's tau\n(Correlation)", "Calibration", 
+      "Mean relative\n95% HPD width", "Weighted Interval score")
 
 
 for (statistic in s) {
   
-  if (statistic == "Kendall's tau") statistic_df = rename(regressionDF, stat = tau)
+  if (statistic == "Kendall's tau\n(Correlation)") statistic_df = rename(regressionDF, stat = tau)
   if (statistic == "Calibration") statistic_df = rename(calibration, stat = perc)
-  if (statistic == "Mean relative 95% HPD\nwidth") statistic_df = data %>%
+  if (statistic == "Mean relative\n95% HPD width") statistic_df = data %>%
       filter(value.y > 0) %>%
       group_by(protocol, nSeq, model) %>%
       summarise(stat = mean( (X97_5_hpd - X2_5_hpd) / value.y, na.rm = T) * 100)
-  if (statistic == "Mean relative bias") statistic_df = data %>%
+  if (statistic == "Mean relative\nbias") statistic_df = data %>%
       filter(value.y > 0) %>%
       group_by(protocol, nSeq, model) %>%
       summarise(stat = mean( (X50 - value.y) / value.y, na.rm = T) * 100 )
@@ -173,7 +170,7 @@ for (statistic in s) {
                  sep = "_") %>%
         mutate(protocol = factor(protocol, 
                                  levels = c("uniformS", "maxPerRegion", "maxPerRegionYear"), 
-                                 labels = c("uni. surv.", "region", "region+year"))) %>%
+                                 labels = c("uni.\nsurv.", "region", "region+\nyear"))) %>%
         filter(surveillance_bias == b) %>%
         ggplot(., aes(x = protocol, y = stat, col = model, group = interaction(model, protocol))) +
         geom_boxplot(position=position_dodge(0.8), outlier.shape = NA) +
@@ -219,7 +216,7 @@ for (statistic in s) {
                  sep = "_") %>%
         mutate(protocol = factor(protocol, 
                                  levels = c("uniformS", "maxPerRegion", "maxPerRegionYear"), 
-                                 labels = c("uni. surv.", "region", "region+year"))) %>%
+                                 labels = c("uni.\nsurv.", "region", "region+\nyear"))) %>%
         filter(surveillance_bias == b) %>%
         ggplot(., aes(x = protocol, y = stat, col = model, shape = nSeq, group = interaction(nSeq, model))) +
         geom_point(size = 2) +
@@ -238,17 +235,18 @@ for (statistic in s) {
     }
   }
 
-  if (statistic == "Kendall's tau") {
+  if (statistic == "Kendall's tau\n(Correlation)") {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(c(0,1))
   }
   if (statistic == "Calibration") {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(c(0,100))
   }
-  if (statistic %in% c("Mean relative bias", "Mean relative 95% HPD\nwidth")) {
-    for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(min(statistic_df$stat),max(statistic_df$stat))
+  if (statistic %in% c("Mean relative\nbias", "Mean relative\n95% HPD width")) {
+    for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] +
+        ylim(min(statistic_df$stat),max(statistic_df$stat))
   }
   
-  if (i < (length(s)-1)*3) {
+  if (!statistic %in% c("Weighted Interval score", "Mean relative\n95% HPD width")) {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + rremove("x.text") + rremove("x.ticks")
   }
   
@@ -265,7 +263,7 @@ p2 = ggarrange(plotlist = allPlots[c(13:15)], ncol = 3,
                labels = c("E", "J", ""), widths = c(1.5,1,1), 
                vjust = 1, hjust = 0, align = "hv", legend = "none")
 
-tosave = ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(3.3,1), align = "hv", common.legend = T, 
-                   legend = "bottom")
+tosave = ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(3.3,1), align = "hv", 
+                   common.legend = T, legend = "bottom")
 
-ggsave(paste0("2.Figures/", runType, "/lineage_migration_counts_full.png"), tosave, width = 9, height = 12)
+ggsave(paste0("2.Figures/", runType, "/lineage_migration_counts.png"), tosave, width = 9, height = 12)

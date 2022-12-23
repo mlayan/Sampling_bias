@@ -13,15 +13,12 @@ library(ggpubr)
 source('R/plot_results.R')
 
 runType = "3demes"
-category = paste0('HKY_', runType)
 models = c("mascot", 'dta', 'basta', "glm")
 if (runType == "3demes") regions <- regions[1:3]
 
 # Input and output Directory
-dirFigs = ifelse(exists("subcategory"),
-                 paste0("2.Figures/", runType, "/", subcategory),
-                 paste0("2.Figures/", runType))
-dirAdjBF = paste0(category, "/analyses")
+dirFigs = paste0("Figures/", runType)
+dirAdjBF = paste0(runType, "/analyses")
 
 # Colors
 colModels = c("#00979c", "#883000", "#fa7850", "darkgoldenrod1")
@@ -40,22 +37,20 @@ allConds = apply(allConds, 1, paste, collapse = "_")
 files = paste0("/introduction_dates_", allConds, ".txt")
 
 for (f in files) {
-  if (!grepl("dta_500", f)) {
-      fileName = paste0(dirAdjBF, f)
-    if (file.exists(fileName)) {
-      print(fileName)
-      if (nrow(data) == 0) {
-        data = read.table(fileName, stringsAsFactors = F, sep = "\t", header = T)
-      } else {
-        data = bind_rows(data, 
-                         read.table(fileName, stringsAsFactors = F, sep = "\t", header = T))
-      } 
-    }
+    fileName = paste0(dirAdjBF, f)
+  if (file.exists(fileName)) {
+    print(fileName)
+    if (nrow(data) == 0) {
+      data = read.table(fileName, stringsAsFactors = F, sep = "\t", header = T)
+    } else {
+      data = bind_rows(data, 
+                       read.table(fileName, stringsAsFactors = F, sep = "\t", header = T))
+    } 
   }
 }
 
 # Keep only conditions with enough statistical support
-selectedRuns = read.table(paste0(dirFigs, "/2.selected_runs.txt"), 
+selectedRuns = read.table(paste0(dirFigs, "/selected_runs.txt"), 
                           header = T, sep = "\t", stringsAsFactors = F) %>%
   filter(model %in% models) %>%
   select(-matrix)
@@ -116,17 +111,18 @@ data = mutate(data,
 # relative error
 allPlots = list()
 i = 1 
-s = c("Kendall's tau", "Calibration", "Mean relative 95% HPD\nwidth", "Mean relative bias")
+s = c("Mean relative\nbias", "Kendall's tau\n(Correlation)", "Calibration", 
+      "Mean relative\n95% HPD width")
 
 
 for (statistic in s) {
   
-  if (statistic == "Kendall's tau") statistic_df = rename(regressionDF, stat = tau)
+  if (statistic == "Kendall's tau\n(Correlation)") statistic_df = rename(regressionDF, stat = tau)
   if (statistic == "Calibration") statistic_df = rename(calibration, stat = perc)
-  if (statistic == "Mean relative 95% HPD\nwidth") statistic_df = data %>%
+  if (statistic == "Mean relative\n95% HPD width") statistic_df = data %>%
       group_by(protocol, nSeq, model) %>%
       summarise(stat = mean( (X97_5_hpd - X2_5_hpd) / value.y, na.rm = T))
-  if (statistic == "Mean relative bias") statistic_df = data %>%
+  if (statistic == "Mean relative\nbias") statistic_df = data %>%
       group_by(protocol, nSeq, model) %>%
       summarise(stat = mean( (X50 - value.y) / value.y, na.rm = T) )
   
@@ -157,7 +153,7 @@ for (statistic in s) {
                sep = "_") %>%
       mutate(protocol = factor(protocol, 
                                levels = c("uniformS", "maxPerRegion", "maxPerRegionYear"), 
-                               labels = c("uni. surv.", "region", "region+year"))) %>%
+                               labels = c("uni.\nsurv.", "region", "region+\nyear"))) %>%
       filter(surveillance_bias == b) %>%
       ggplot(., aes(x = protocol, y = stat, col = model, shape = nSeq, group = interaction(nSeq, model))) +
       geom_point(size = 2) +
@@ -175,13 +171,13 @@ for (statistic in s) {
     k = k+1
   }
   
-  if (statistic == "Kendall's tau") {
+  if (statistic == "Kendall's tau\n(Correlation)") {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(-0.5,1)
   }
   if (statistic == "Calibration") {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(0,100)
   }
-  if (statistic %in% c("Mean relative 95% HPD width", "Mean relative bias")) {
+  if (statistic %in% c("Mean relative\n95% HPD width", "Mean relative\nbias")) {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(min(statistic_df$stat), max(statistic_df$stat))
   }
   
@@ -192,9 +188,9 @@ for (statistic in s) {
   i = i+3
 }
 
-arrange = ggarrange(plotlist = allPlots, ncol = 3, nrow = 4,
+arranged = ggarrange(plotlist = allPlots, ncol = 3, nrow = 4,
                     labels = c("A", "E", "", "B", "F", "", "C", "G", "", "D", "H", ""), 
                     widths = rep(c(1.3,1,1), 4), vjust = 1, hjust = 0,
                     align = "hv", common.legend = T, legend = "bottom")
-ggsave(paste0("2.Figures/", runType, "/introduction_dates.png"), arrange, width = 9, height = 9)
+ggsave(paste0("2.Figures/", runType, "/introduction_dates.png"), arranged, width = 9, height = 9)
 

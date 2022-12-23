@@ -19,7 +19,6 @@ source('R/plot_results.R')
 runType = "3demes"
 ftl = list(size = 20, color = "black", face = "bold")
 
-category = paste0('HKY_', runType)
 if (runType == "3demes") regions = regions[1:3]
 fluxes <- apply(permutations(length(regions), 2, regions), 1, function(x) paste0(x[1], "_", x[2]))
 
@@ -36,7 +35,7 @@ names(colModels) = c("CTMC", "BASTA", "MASCOT", "MASCOT-GLM")
 #############################################################
 ## Simulation data
 m = data.frame()
-for (i in category) {
+for (i in runType) {
   fileName = paste0(i, '/analyses/migration_events.txt')
   
   if (file.exists(fileName)) {
@@ -52,19 +51,20 @@ m = m %>%
 if (runType == "7demes") m$matrix = runType
 
 ## BEAST data
-data = read.table(paste0(directory, "/2.selected_data.txt"),
+data = read.table(paste0(directory, "/selected_data.txt"),
                   stringsAsFactors = FALSE, header = TRUE, sep = "\t") %>%
   filter(!(model == "basta" & nSeq == 500)) %>% 
-  mutate(model = factor(model, levels = c("dta", "basta", "mascot", "glm"), labels = names(colModels))) 
+  mutate(model = factor(model, levels = c("dta", "basta", "mascot", "glm"), 
+                        labels = names(colModels))) 
 
 ## Selected runs
-selected = read.table(paste0(directory, "/2.selected_runs.txt"),
+selected = read.table(paste0(directory, "/selected_runs.txt"),
                       stringsAsFactors = FALSE,
                       header = TRUE, sep = "\t")
 
 
 ## Tree topology
-topologies = read.table(paste0(category, '/analyses/topology_regression.txt'), 
+topologies = read.table(paste0(runType, '/analyses/topology_regression.txt'), 
                         stringsAsFactors = FALSE, header = TRUE, sep = "\t") %>%
   right_join(., selected, by = c("model", "nSim", "protocol", "nSeq", "matrix")) %>%
   mutate(protocol = factor(protocol, c(bias, surveillance)), 
@@ -76,45 +76,6 @@ topologies = read.table(paste0(category, '/analyses/topology_regression.txt'),
 #############################################################
 ##  GENETIC PARAMETERS
 #############################################################
-## Figure 2--------------------------------------------------
-figure2 = list()
-
-figure2[[1]] = topologies %>%
-  filter(protocol %in% bias) %>%
-  mutate(protocol = factor(protocol, bias, c("uniform", "2.5", "5", "10", "20", "50"))) %>%
-  ggplot(.,aes(x = protocol, y = coef, group = interaction(protocol, model))) +
-  facet_grid(nSeq ~ .) +
-  geom_boxplot(position=position_dodge(0.8), outlier.shape = NA) +
-  geom_point(position=position_jitterdodge(jitter.width = 0.15, dodge.width = 0.8),  
-             alpha = 0.4, aes(col = as.character(model))) +
-  scale_color_manual(values = colModels) +
-  theme_light() +
-  labs(x = "", y = "R2 of linear regression on tree topology", col = "") 
-
-clockRateD = data %>%
-  filter(parameter == "clockRate") %>%
-  mutate(nSeq = factor(nSeq, levels = c(150, 500), labels = c("150 sequences", "500 sequences")), 
-         protocol = factor(protocol, levels = c(bias, surveillance)))
-
-figure2[[2]] = clockRateD %>%
-  filter(protocol %in% bias) %>%
-  mutate(protocol = factor(protocol, bias, c("uniform", "2.5", "5", "10", "20", "50"))) %>%
-  ggplot(.,aes(x = protocol, y = X50, group = interaction(protocol, model))) +
-  facet_grid(nSeq ~ .) +
-  geom_hline(yintercept = clockRate, size = 1) +
-  geom_boxplot(position=position_dodge(0.8), outlier.shape = NA) +
-  geom_point(position=position_jitterdodge(jitter.width = 0.15, dodge.width = 0.8),  
-             alpha = 0.4, aes(col = as.character(model))) +
-  scale_color_manual(values = colModels) +
-  theme_light() +
-  scale_y_continuous(labels = function(x) format(x, scientific = TRUE)) +
-  labs(x = "", y = "Evolutionary rate (median, /site/year)", col = "") 
-
-arranged = ggarrange(plotlist = figure2, ncol = 1, nrow = 2, 
-                     labels = c("B", "C"), common.legend = T, legend = "bottom", align = "hv")
-ggsave(paste0("2.Figures/", runType, "/figure2.png"), arranged, width = 7, height = 8)  
- 
-
 ## Tree topology--------------------------------------------------------
 treeTop = list()
 ymin = min(topologies$coef, na.rm = T) 
@@ -167,7 +128,7 @@ arranged = ggarrange(treeTop[[1]],
                                common.legend = T, legend = "bottom", ncol = 2, hjust = 0, align = "v", labels = c("B", "C")), 
                      nrow = 2, hjust = 0, labels = c("A", ""))
 
-ggsave(paste0("2.Figures/", runType, "/topologies.png"), arranged, width = 8, height = 8)
+ggsave(paste0("figures/", runType, "/topologies.png"), arranged, width = 8, height = 8)
   
 
 ## Kappa and frequencies------------------------------------------------
@@ -231,7 +192,8 @@ for (p in names(p_name)) {
                        ggarrange(plotlist = geneticParams[2:3], common.legend = T, legend = "bottom", ncol = 2, hjust = 0, align = "v", labels = c("B", "C")), 
                        nrow = 2, hjust = 0, labels = c("A", ""))
   
-  ggsave(paste0("2.Figures/", runType, "/", p, ".png"), arranged, width = 8, height = 8)
+  if (p == "clockRate") p = "evolutionary_rate"
+  ggsave(paste0("figures/", runType, "/", p, ".png"), arranged, width = 8, height = 8)
   
 }
 
@@ -300,7 +262,7 @@ arranged = ggarrange(rootPlot[[1]],
   ggarrange(plotlist = rootPlot[2:3], labels = c("B", "C"), 
             hjust = 0,align = "v", common.legend = T, legend="bottom"), 
   labels = "A", nrow = 2, hjust = 0)
-ggsave(paste0("2.Figures/", runType, "/rootlocation.png"), arranged, width = 8, height = 8)
+ggsave(paste0("figures/", runType, "/rootlocation.png"), arranged, width = 8, height = 8)
 
 
 #############################################################
@@ -338,7 +300,7 @@ migrationEventsCalibration = migrationEvents %>%
   summarise(perc = 100 * sum((BF >= 3 | is.na(BF)) & value.y >= X2_5_hpd & value.y <= X97_5_hpd) / sum(BF >= 3 | is.na(BF)))
 
 
-# Supplementary Figure 8-----------------------------------
+# Supplementary Figure-----------------------------------
 y1 = max(migrationEvents$X97_5_hpd[migrationEvents$model == "CTMC" & migrationEvents$protocol %in% bias])
 
 labels = regressionMJ %>%
@@ -363,7 +325,8 @@ p = migrationEvents %>%
   labs(x = "Simulated migration events", 
        y = "Estimated migration events (median, 95%-HPD)")
 
-ggsave(paste0(directory, "/supp_figure7.png"), p, width = 10, height = 5)
+ggsave(paste0(directory, "/total_migration_counts_regression_plot_ctmc.png"), 
+       p, width = 10, height = 5)
 
 
 # Plot for the paper---------------------------------------
@@ -401,18 +364,18 @@ spatialCounts %>%
 
 allPlots = list()
 i = 1 
-s = c("Kendall's tau", "Calibration", "Mean relative\n95% HPD width", 
-      "Mean relative bias", "Weighted Interval score")
+s = c("Mean relative\nbias", "Kendall's tau\n(Correlation)", "Calibration", 
+      "Mean relative\n95% HPD width", "Weighted Interval score")
 
 for (statistic in s) {
   
-  if (statistic == "Kendall's tau") statistic_df = rename(regressionMJ, stat = tau)
+  if (statistic == "Kendall's tau\n(Correlation)") statistic_df = rename(regressionMJ, stat = tau)
   if (statistic == "Calibration") statistic_df = rename(migrationEventsCalibration, stat = perc)
   if (statistic == "Mean relative\n95% HPD width") statistic_df = migrationEvents %>%
       filter(value.y != 0) %>%
       group_by(protocol, nSeq, model) %>%
       summarise(stat = mean( (X97_5_hpd - X2_5_hpd) / value.y, na.rm = T))
-  if (statistic == "Mean relative bias") statistic_df = migrationEvents %>%
+  if (statistic == "Mean relative\nbias") statistic_df = migrationEvents %>%
       filter(value.y != 0) %>%
       group_by(protocol, nSeq, model) %>%
       summarise(stat = mean( (X50 - value.y) / value.y, na.rm = T))
@@ -454,7 +417,7 @@ for (statistic in s) {
                  sep = "_") %>%
         mutate(protocol = factor(protocol, 
                                  levels = c("uniformS", "maxPerRegion", "maxPerRegionYear"), 
-                                 labels = c("uni. surv.", "region", "region+year"))) %>%
+                                 labels = c("uni.\nsurv.", "region", "region+\nyear"))) %>%
         filter(surveillance_bias == b) %>%
         ggplot(., aes(x = protocol, y = stat, col = model, group = interaction(model, protocol))) +
         geom_boxplot(position=position_dodge(0.8), outlier.shape = NA) +
@@ -503,7 +466,7 @@ for (statistic in s) {
                    sep = "_") %>%
           mutate(protocol = factor(protocol, 
                                    levels = c("uniformS", "maxPerRegion", "maxPerRegionYear"), 
-                                   labels = c("uni. surv.", "region", "region+year"))) %>%
+                                   labels = c("uni.\nsurv.", "region", "region+\nyear"))) %>%
           filter(surveillance_bias == b) %>%
           ggplot(., aes(x = protocol, y = stat, col = model, shape = nSeq, group = interaction(nSeq, model))) +
           geom_point(size = 2) +
@@ -522,7 +485,7 @@ for (statistic in s) {
       }
     }
   
-  if (statistic == "Kendall's tau") {
+  if (statistic == "Kendall's tau\n(Correlation)") {
     ymin = ifelse(min(statistic_df$stat) < 0, min(statistic_df$stat), 0)
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(ymin, 1)
   }
@@ -530,10 +493,10 @@ for (statistic in s) {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(c(0,100))
   }
   
-  if (statistic %in% c("Mean relative bias", "Mean relative\n95% HPD width")) {
+  if (statistic %in% c("Mean relative\nbias", "Mean relative\n95% HPD width")) {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + ylim(min(statistic_df$stat),max(statistic_df$stat))
   }
-  if (!statistic %in% c("Weighted Interval score", "Mean relative bias")) {
+  if (!statistic %in% c("Weighted Interval score", "Mean relative\n95% HPD width")) {
     for (l in i:(i+2)) allPlots[[l]] = allPlots[[l]] + rremove("x.text") + rremove("x.ticks")
   }
   
@@ -550,6 +513,7 @@ p2 = ggarrange(plotlist = allPlots[c(13:15)], ncol = 3,
                labels = c("E", "J", ""), widths = c(1.5,1,1), 
                vjust = 1, hjust = 0, align = "hv", legend = "none")
 
-tosave = ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(3.3,1), align = "hv", common.legend = T, legend = "bottom")
+tosave = ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(3.3,1), 
+                   align = "hv", common.legend = T, legend = "bottom")
 
-ggsave(paste0("2.Figures/", runType, "/total_migration_counts.png"), tosave, width = 9, height = 12)
+ggsave(paste0("figures/", runType, "/total_migration_counts.png"), tosave, width = 9, height = 12)
