@@ -37,6 +37,10 @@ def hpd(x, upper_only = False, lower_only = False, conf = 95):
 	By default, the 95%-HDP is returned, it can be modified by using the conf argument.
 	Boolean arguments upper_only or lower_only enable to return only the specified bound.
 	"""
+
+	# Remove potential NaN values (notably from BASTA)
+	x = [v for v in x if ~np.isnan(v)]
+
 	# Sort x
 	L = len(x)
 	S = sorted(x)
