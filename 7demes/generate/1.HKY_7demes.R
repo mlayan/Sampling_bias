@@ -10,14 +10,14 @@
 #############################################################
 
 rm(list = ls())
-setwd("7demes")
 
 # Arguments 
-# Give a value between 1 and 5 to determine which seed should be used 
 args <- commandArgs(trailingOnly=T)
 if (length(args) == 0) {
   stop("Need arguments!")
 }
+
+setwd(paste0("/pasteur/homes/maylayan/MMMI_Rage/HKY_7demes/mig", args[2], "/verify/"))
 
 # Print the % of migration
 print(paste0("Simulations with ", args[2], "% of migration"))
@@ -34,21 +34,21 @@ library(foreach)
 
 # Models and functions
 # Epidemic model
-sourceCpp("../R/cpp_model_v5.cpp")
-sourceCpp("../R/cpp_beta_mat.cpp")
+sourceCpp("../../../R_Functions/cpp_model_v5.cpp")
+sourceCpp("../../../R_Functions/cpp_beta_mat.cpp")
 
 # Evolutionary model
-source('../R/HKY_v2.R')
+source('../../../R_Functions/HKY_v2.R')
 
 # Sampling protocols
-source('../R/sampling_protocols_v2.R')
+source('../../../R_Functions/sampling_protocols_v2.R')
 
 # Arguments
   # Start of the epidemic 
 initPatch <- 1
 
   # Sequence simulation
-ref <- read.fasta("../inputfiles/RV2627.fasta", 
+ref <- read.fasta("../../../Input_files/RV2627.fasta", 
 	forceDNAtolower = FALSE, 
 	set.attributes = FALSE)[[1]]
 mut.rate <- 2.44e-4/365.25    # See Troupin et al., 2016
@@ -79,7 +79,7 @@ weightsRegions[4, 2:6] <- biasWeights # Region4 will be oversampled
 rownames(weightsRegions) <- regions
 
 # Human population
-H <- read.csv("../inputfiles/inhabitants_per_region_UNadj.csv", 
+H <- read.csv("../../../Input_files/inhabitants_per_region_UNadj.csv", 
 	stringsAsFactors = FALSE, 
 	fileEncoding="latin1")
 H$aggregation[H$region %in% c("Tanger - Tétouan",
@@ -107,7 +107,7 @@ H$aggregation[H$region %in% c("Guelmim - Es-Semara",
 human_pop = group_by(H, aggregation) %>% summarise(pop = sum(ind)) %>% .$pop
 
   # Human mobility
-distance = as.matrix(read.table("../inputfiles/mobility_matrix_ecoregions.txt", 
+distance = as.matrix(read.table("../../../Input_files/mobility_matrix_ecoregions.txt", 
 	header = FALSE))
 mobility = TRUE
 
@@ -149,7 +149,7 @@ inf_period_dist <- proba/sum(proba)
 #-----------------------------------------------------------
 # Simulation
 #-----------------------------------------------------------
-registerDoParallel(cores = args[2])
+registerDoParallel(cores = 10)
 
 # Set the range of the simulation index
 seed <- as.integer(Sys.time() + Sys.getpid())
